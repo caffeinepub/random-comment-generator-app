@@ -1,0 +1,159 @@
+{
+  "kind": "build_request",
+  "title": "Implement completely independent per-device single-comment history (local + backend)",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-19",
+      "text": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1",
+          "msg-3",
+          "msg-4"
+        ],
+        "quotes": [
+          "Make individual app history for each device",
+          "Yes make it completely independent don't merge all devices history",
+          "3reset"
+        ]
+      },
+      "acceptanceCriteria": [
+        "On first app load in a fresh browser profile, a new device identifier is created and stored locally (e.g., localStorage).",
+        "If local browser/app storage is cleared, the next app load generates a different device identifier.",
+        "The device identifier is never derived from the authenticated principal, and switching Internet Identity accounts on the same device does not change the stored device identifier unless local storage is cleared.",
+        "No edits are made to frontend immutable hook files; any new device-id logic is implemented via new utilities/components and consumed by existing code."
+      ]
+    },
+    {
+      "id": "REQ-20",
+      "text": "Update the Motoko backend to store and retrieve single-comment generation history keyed by (caller principal, device identifier, listId) so that histories do not merge across devices for the same principal.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1",
+          "msg-3",
+          "msg-4"
+        ],
+        "quotes": [
+          "Make individual app history for each device",
+          "Yes make it completely independent don't merge all devices history",
+          "2.yes"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A caller principal can have multiple independent histories, one per device identifier.",
+        "Generating a single comment on Device A does not affect the history returned for Device B when both are logged in with the same principal.",
+        "History remains filtered to live listIds (i.e., listIds not returned by getCommentListIds() are excluded) with the same semantics as the current getUserCommentHistory().",
+        "Backend rejects/handles missing/empty device identifiers with a clear English error message (trap) rather than silently merging into a shared bucket."
+      ]
+    },
+    {
+      "id": "REQ-21",
+      "text": "Extend backend APIs used by the Customer/User view so the frontend can request device-scoped history by providing the device identifier, without changing bulk-generation behavior.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1",
+          "msg-4"
+        ],
+        "quotes": [
+          "Make individual app history for each device",
+          "1.yes\n2.yes\n3reset"
+        ]
+      },
+      "acceptanceCriteria": [
+        "There is a backend method that returns the caller’s single-comment history for the current device identifier (keyed by listId) suitable for the existing UI history display.",
+        "The existing bulk generation flow (generateBulkComments) remains unaffected and does not write into the per-device single-comment history unless explicitly required elsewhere (do not add new coupling).",
+        "All user-facing/backend error text is in English."
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "text": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1",
+          "msg-3",
+          "msg-4"
+        ],
+        "quotes": [
+          "Make individual app history for each device",
+          "Yes make it completely independent don't merge all devices history",
+          "1.yes\n2.yes\n3reset"
+        ]
+      },
+      "acceptanceCriteria": [
+        "The 'Your History' section in the Customer/User view reflects only the current device’s history, not other devices for the same principal.",
+        "The list dropdown indicator (check icon) reflects only the current device’s history.",
+        "Generating a single comment updates history for the current device only (UI refresh via React Query invalidation still works)."
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "text": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-4"
+        ],
+        "quotes": [
+          "1.yes\n2.yes\n3reset"
+        ]
+      },
+      "acceptanceCriteria": [
+        "After generating a single comment, the local device history store is updated for that listId.",
+        "On page reload, the UI can initialize from local device history and then reconcile with backend history for the same device identifier (no cross-device merging).",
+        "If local storage is cleared (deviceId resets), the local mirrored history is also cleared/treated as empty for the new device identifier."
+      ]
+    },
+    {
+      "id": "REQ-24",
+      "text": "Persist the new per-device history structure in stable state and implement a conditional upgrade migration so existing per-principal history data is preserved safely during canister upgrades.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1",
+          "msg-4"
+        ],
+        "quotes": [
+          "Make individual app history for each device",
+          "2.yes"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upgrading the canister does not erase existing history data.",
+        "If legacy per-principal history exists, it is migrated into the new structure in a deterministic way (e.g., assigned to a default/legacy device bucket) without breaking current users.",
+        "Migration is conditional and safe to run multiple times (no traps, no duplicate state corruption)."
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
+    "If state schema changes are required, use the existing conditional migration approach and only add/modify backend/migration.mo as needed.",
+    "Do not edit any paths listed in frontend.immutablePaths; compose around them instead.",
+    "Use English for all user-facing text (toasts, labels, error messages)."
+  ],
+  "nonGoals": [
+    "Do not implement daily single-comment limits or change existing per-list/per-user restriction rules beyond making them device-scoped.",
+    "Do not change bulk comment generation access-key behavior or introduce new authentication methods.",
+    "Do not add real-time features (WebSockets/push).",
+    "Do not address unrelated known issues (e.g., non-random selection bias) unless required to complete per-device history."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  },
+  "userProfileUpdate": {
+    "goalsToAdd": [],
+    "goalsToRemove": [],
+    "preferencesToAdd": [],
+    "preferencesToRemove": [],
+    "miscToAdd": [],
+    "miscToRemove": [],
+    "fieldsToSet": {},
+    "fieldsToDelete": []
+  }
+}

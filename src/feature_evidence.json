@@ -1,0 +1,71 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-generate-and-persist-a-per-device-identifier-in-the-browser-and-reset-it-automatically-when-browser-app-storage-is-cleared-so-each-device-has-an-independent-history-scope-even-when-the-same-internet-identity-principal-logs-in-on-multiple-devices",
+      "featureTitle": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+      "files": [
+        "frontend/src/hooks/useDeviceId.ts",
+        "frontend/src/utils/deviceId.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-19"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-the-frontend-react-query-layer-and-customer-user-view-to-read-and-display-device-scoped-history-by-passing-the-locally-stored-device-identifier-to-the-backend-ensuring-the-on-screen-history-and-per-list-already-generated-indicators-are-device-specific",
+      "featureTitle": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
+      "files": [
+        "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+        "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+        "frontend/src/pages/UserView.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-22"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-mirror-device-scoped-history-in-browser-local-storage-so-the-device-can-retain-its-own-history-even-if-the-ui-reloads-and-keep-it-consistent-with-backend-updates-for-the-same-device-identifier",
+      "featureTitle": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+      "files": [
+        "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+        "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+        "frontend/src/pages/UserView.tsx",
+        "frontend/src/utils/deviceHistoryStorage.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-23"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

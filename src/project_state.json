@@ -1,0 +1,610 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 123,
+  "summary": "Random Comment Generator App is an Internet Computer (ICP) dapp with a Motoko canister backend and a React (Vite + Tailwind + shadcn/ui) frontend. It manages multiple named comment lists of pre-written comments. End users can generate unique unused comments (single generation is limited to 2 per principal) or bulk-generate multiple comments at once using an admin-managed access key. Users can also upload rating/reaction images and send messages to the admin via an in-app chat widget. Admins authenticate via Internet Identity (II) and can manage comment lists/comments, moderate uploaded images, manage user messages (mark read/clear), view bulk generation totals and activity logs, manage the bulk generator access key, and manage admin access at runtime via persistent admin-permissions settings (admin allowlist + optional global access disable switch). Admin access relies on role/auth checks (no PIN/unlock code gate).",
+  "architectural_notes": [
+    "Backend is a single Motoko canister (backend/main.mo) using mo:core Map/List for in-canister state: comment lists, rating images, messages, bulk generation logs, user profiles, and per-user single-generation counts.",
+    "Role-based access control is implemented via authorization/access-control.mo and exposed through authorization/MixinAuthorization.mo. Admin bootstrap is performed by comparing a user-provided secret to the CAFFEINE_ADMIN_TOKEN environment variable.",
+    "Frontend uses Internet Identity via @dfinity/auth-client in a React context provider (InternetIdentityProvider) with persisted delegations and 30-day TTL.",
+    "Frontend creates an identity-scoped backend actor via useActor; when the actor changes it invalidates/refetches all React Query data (except the actor query).",
+    "API access is centralized in TanStack React Query hooks (frontend/src/hooks/useQueries.ts) with consistent query keys, polling for near-real-time updates, and mutation-driven cache invalidation plus sonner toasts for user feedback.",
+    "UI is organized into three view modes (Admin Panel, Customer View, Upload Section) with role-gated rendering of the Admin Panel.",
+    "Theming and visual polish use Tailwind CSS with OKLCH CSS variables, next-themes dark mode, custom gradient utilities, and a canvas-based AnimatedBackground.",
+    "Blob storage maintenance utilities are included via backend/blob-storage/Mixin.mo and backend/blob-storage/Storage.mo (gateway principal registry, dead blob pruning, and cycles top-up via a cashier canister).",
+    "A reusable build/deployment scaffold was added under build-template/ (Dockerfile, deploy.sh, icp.yaml, canister.yaml templates, frontend tooling config, and image utility scripts) to standardize packaging and deployment of the ICP dapp.",
+    "Backend now includes explicit upgrade migration support (backend/migration.mo) with preupgrade/postupgrade state serialization to preserve in-canister state across upgrades."
+  ],
+  "known_issues": [
+    "Comment selection is not actually random: generateComment() always selects index 0 from available comments, and generateBulkComments() selects the first N available comments; this biases distribution.",
+    "Security/abuse risk: addComment() is intentionally open-access and auto-creates lists, enabling spam/unbounded state growth without rate limiting or content validation.",
+    "Backend lacks robust validation/rate limits for comment size/content and uploaded image size/type (frontend enforces some constraints like 5MB images, but backend accepts arbitrary blobs/text).",
+    "React Query invalidation references ['availableComments', listId] but there is no corresponding hook in frontend/src/hooks/useQueries.ts in the provided code.",
+    "Deployment/version mismatch: user reports the live site is still showing/retrieving Version 17 instead of the latest deployed version (possible caching or deployment target misalignment)."
+  ],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "IF-1",
+      "title": "Internet Identity authentication lifecycle",
+      "synonyms": [
+        "II login",
+        "AuthClient integration",
+        "delegation persistence"
+      ],
+      "description": "Provides an InternetIdentityProvider that initializes an AuthClient, restores stored delegations on mount, supports login with configured derivationOrigin and 30-day TTL, and supports logout/clear while exposing status flags and the current Identity.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "Identity-scoped backend actor creation and query invalidation",
+      "synonyms": [
+        "useActor",
+        "actor recreation",
+        "authenticated/anonymous actor"
+      ],
+      "description": "Creates an anonymous backend actor when unauthenticated and an identity-authenticated actor when logged in. Authenticated actor initialization calls _initializeAccessControlWithSecret() using a secret read from the URL hash/session. When the actor changes, all non-actor React Query caches are invalidated/refetched.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "URL-hash secret extraction and session persistence",
+      "synonyms": [
+        "caffeineAdminToken",
+        "getSecretParameter",
+        "sessionStorage secret"
+      ],
+      "description": "Extracts sensitive parameters from the URL hash fragment, persists them in sessionStorage, and removes them from the URL via history.replaceState to reduce leakage risk.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "Admin bootstrap and role-based access control",
+      "synonyms": [
+        "AccessControl",
+        "MixinAuthorization",
+        "first-admin assignment"
+      ],
+      "description": "Implements roles (#admin/#user/#guest). On initialization, the first authenticated principal providing a secret matching CAFFEINE_ADMIN_TOKEN is assigned admin; other authenticated principals are assigned user. Exposes getCallerUserRole(), isCallerAdmin(), and admin-only role assignment APIs.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "Comment list discovery and remaining-availability counts",
+      "synonyms": [
+        "getCommentListIds",
+        "getRemainingCount"
+      ],
+      "description": "Public endpoints provide available comment list IDs and remaining unused comment counts per list. Frontend polls these values to keep the UI up to date.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "Per-user single-generation usage tracking",
+      "synonyms": [
+        "getUserCommentCount",
+        "2-comment limit tracking"
+      ],
+      "description": "Tracks per-caller single comment generation count on the backend and exposes getUserCommentCount() so the frontend can show remaining allowance and disable generation after reaching the 2-comment limit.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Single comment generation with used-tracking and 2-comment limit",
+      "synonyms": [
+        "generateComment",
+        "used flagging"
+      ],
+      "description": "Generates one unused comment for a list, marks it as used so it won’t be returned again, and traps once the caller reaches 2 single-generated comments.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "Bulk comment generation with access-key enforcement and used-tracking",
+      "synonyms": [
+        "generateBulkComments",
+        "bulk generator",
+        "Bulk Generator Key"
+      ],
+      "description": "Generates up to N unused comments, marks them used, and returns an array. Bulk generation requires callers to provide a key matching the backend-stored bulkGenKey; invalid keys trap and the operation fails. Each event is logged for admin review.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Frontend access-key prompt for bulk generation",
+      "synonyms": [
+        "AccessKeyDialog",
+        "bulk key dialog"
+      ],
+      "description": "UserView and UploadSection require users to enter an access key in a modal dialog before calling bulk generation; the entered key is passed as providedKey to the backend bulk generation API.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Admin management of the Bulk Generator access key",
+      "synonyms": [
+        "getBulkGenKey",
+        "setBulkGenKey",
+        "access key settings"
+      ],
+      "description": "Admin-only backend APIs allow reading and updating the bulk generator key. The Admin Panel includes UI controls to view the current key and set a new one, with React Query hooks useGetBulkGenKey/useSetBulkGenKey.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "Admin comment list management (CRUD + reset/clear)",
+      "synonyms": [
+        "createCommentList",
+        "getCommentList",
+        "deleteCommentList",
+        "resetCommentList",
+        "clearAllCommentLists"
+      ],
+      "description": "Admin-only operations to create lists, view list contents, delete lists, reset used flags to unused, and clear all lists. Admin Panel provides UI workflows including confirm dialogs.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Open comment ingestion (single add + per-line bulk upload)",
+      "synonyms": [
+        "addComment",
+        "Upload Section comment upload",
+        "Admin Panel bulk upload"
+      ],
+      "description": "Any caller can add comments to a list; lists are auto-created on first write and added to the list ID registry. Frontend supports single comment uploads and bulk uploads (one per line) from Admin Panel and Upload Section.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "Bulk generation activity logging and admin reporting",
+      "synonyms": [
+        "BulkGenLog",
+        "getBulkGenerationLog",
+        "Activity tab"
+      ],
+      "description": "Each bulk generation event is logged with principal, listId, number of comments generated, and timestamp. Admin-only API returns logs; Admin Panel displays them sorted by newest first.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-15",
+      "title": "Admin bulk totals reporting for all lists",
+      "synonyms": [
+        "getAllBulkCommentTotals",
+        "totals dashboard"
+      ],
+      "description": "Admin-only API returns total comment count per list. Admin Panel displays a per-list totals summary for monitoring.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-16",
+      "title": "Rating image upload with progress and admin moderation",
+      "synonyms": [
+        "uploadRatingImage",
+        "ExternalBlob",
+        "getAllRatingImages"
+      ],
+      "description": "Any caller can upload a rating/reaction image stored as an ExternalBlob with metadata (id/uploader/timestamp). Frontend shows preview and upload progress. Admin-only APIs list all images, remove individual images, or remove all images; Admin Panel provides a gallery and delete actions.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-17",
+      "title": "User-to-admin messaging system with read tracking",
+      "synonyms": [
+        "sendMessage",
+        "getAllMessages",
+        "markMessagesAsRead"
+      ],
+      "description": "Any caller can send a message that is stored with sender, timestamp, and read/unread state. Admin can view all messages, mark selected messages as read (including bulk mark-all-read), and clear all messages. Frontend includes a floating ChatBox and an Admin Panel Messages tab with unread badge.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-18",
+      "title": "User profile storage APIs (backend)",
+      "synonyms": [
+        "saveCallerUserProfile",
+        "getCallerUserProfile",
+        "getUserProfile"
+      ],
+      "description": "Backend supports saving and retrieving a simple per-user profile (currently name-only). Access is restricted to authenticated users (#user) for self access, or admin for viewing other users’ profiles.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-19",
+      "title": "Admin Panel UI with multi-tab management and static admin details",
+      "synonyms": [
+        "AdminPanel",
+        "Admin details card",
+        "tabs: comments/images/messages/activity"
+      ],
+      "description": "Admin UI provides management tabs for comments, images, messages, and bulk activity logs, plus a static 'Admin Details' section (name/contact/progression/payment time) and an access-key management section.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-20",
+      "title": "Navigation layout with three view modes and role-gated admin access",
+      "synonyms": [
+        "Admin/Customer/Upload views",
+        "viewMode navigation"
+      ],
+      "description": "App layout provides navigation between Admin Panel, Customer View, and Upload Section. Admin Panel button and rendering are gated by authentication and isCallerAdmin().",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-21",
+      "title": "UI theming, animations, and toast notifications",
+      "synonyms": [
+        "Tailwind OKLCH tokens",
+        "next-themes",
+        "AnimatedBackground",
+        "sonner toasts"
+      ],
+      "description": "Implements light/dark theme support, OKLCH-based CSS variable tokens, gradient utility classes, animated background canvas visuals, and toast-based user feedback across operations.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-22",
+      "title": "Blob storage maintenance and cycles top-up utilities",
+      "synonyms": [
+        "MixinStorage",
+        "dead blob pruning",
+        "gateway principals",
+        "cashier refill"
+      ],
+      "description": "Exposes maintenance endpoints for updating authorized gateway principals, checking blob liveness, listing dead blobs, confirming deletion (with GC trigger), and topping up a cashier canister using cycles based on an environment-configured principal.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-23",
+      "title": "Centralized React Query API layer with polling and cache invalidation",
+      "synonyms": [
+        "useQueries hooks",
+        "TanStack Query",
+        "polling"
+      ],
+      "description": "Provides a consolidated set of query/mutation hooks for admin checks, PIN validation, comment workflows (single/bulk), image workflows, messaging, bulk totals, and activity logs with consistent query keys, polling intervals, cache invalidation, and toast feedback.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-24",
+      "title": "Stable state persistence with upgrade migration hooks",
+      "synonyms": [
+        "stable variables",
+        "preupgrade/postupgrade",
+        "migration.mo"
+      ],
+      "description": "Backend canister state is serialized during upgrades and restored after upgrades using dedicated migration logic, reducing risk of state loss across canister upgrades.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-25",
+      "title": "User profile setup modal (frontend)",
+      "synonyms": [
+        "ProfileSetupModal",
+        "profile onboarding UI"
+      ],
+      "description": "Frontend includes a functional profile setup modal UI that allows authenticated users to create/update their user profile (name) using the backend profile APIs.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-26",
+      "title": "Admin access flow without PIN/unlock-code gating",
+      "synonyms": [
+        "remove AdminPinDialog",
+        "remove validateAdminPin",
+        "direct II admin login"
+      ],
+      "description": "Removes the 4-digit admin PIN gating step from the admin login flow. Admin authentication proceeds via Internet Identity and backend role-based access control checks only, without a separate unlock code/PIN validation step.",
+      "reqIds": [
+        "AR-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-27",
+      "title": "Customer View layout: Bulk Generator section moved after Upload Image section",
+      "synonyms": [
+        "UserView section order",
+        "reorder bulk generator UI"
+      ],
+      "description": "In the Customer View (UserView), the Bulk Comments Generator section is now rendered after the Upload Image section to match the requested UX flow.",
+      "reqIds": [
+        "AR-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-28",
+      "title": "Upload Section: Bulk Comments Generator removed",
+      "synonyms": [
+        "UploadSection remove bulk generator",
+        "hide bulk generation from upload page"
+      ],
+      "description": "The Upload Section page no longer includes the Bulk Comments Generator UI; bulk generation remains available elsewhere (e.g., Customer View).",
+      "reqIds": [
+        "AR-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-29",
+      "title": "Backend-stored admin permissions settings (admin allowlist + global access switch)",
+      "synonyms": [
+        "admin principal allowlist",
+        "runtime admin access control",
+        "disable non-bootstrap admins"
+      ],
+      "description": "Adds persistent backend settings that allow an existing admin to manage which principals may access admin functionality at runtime via an admin-managed allowlist, plus an optional global switch to temporarily disable admin access for non-bootstrap admins while preserving bootstrap/owner recovery.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-30",
+      "title": "Admin Panel Permissions/Settings screen for managing admin access",
+      "synonyms": [
+        "AdminPanel permissions tab",
+        "grant/revoke admin",
+        "toggle admin access"
+      ],
+      "description": "Adds an Admin Panel screen to view current admin principals, add/grant admin to a principal, revoke admin from a principal, and toggle the global admin-access switch, using existing shadcn/ui + Tailwind patterns and English-only UI text.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-31",
+      "title": "Upgrade migration updated for admin-permissions settings persistence",
+      "synonyms": [
+        "schema migration",
+        "conditional state upgrade",
+        "preserve existing state"
+      ],
+      "description": "Extends backend upgrade migration to include the new admin-permissions settings while preserving existing state (comment lists, images, messages, logs, profiles, and counts) during upgrades.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-live-list-checking-for-user-visible-history-by-storing-and-exposing-backend-user-generation-history-that-is-tied-to-the-admin-managed-live-approved-lists-provide-a-backend-api-that-returns-the-caller-s-generated-single-comment-history-keyed-by-listid-and-ensure-the-returned-history-is-filtered-to-listids-that-currently-exist-in-getcommentlistids-i-e-if-a-list-is-deleted-by-admin-it-no-longer-appears-in-the-user-history-response",
+      "title": "Implement \"live list checking\" for user-visible history by storing and exposing backend user generation history that is tied to the admin-managed live/approved lists: provide a backend API that returns the caller’s generated single-comment history keyed by listId, and ensure the returned history is filtered to listIds that currently exist in getCommentListIds() (i.e., if a list is deleted by admin, it no longer appears in the user history response).",
+      "reqIds": [
+        "REQ-16"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-customer-user-view-so-that-when-the-user-selects-a-different-comment-list-listid-the-previously-displayed-generated-single-comment-is-automatically-removed-from-the-user-dashboard-result-display-ui-only-removal-this-clearing-must-happen-on-list-selection-change-not-only-after-a-new-generation-completes",
+      "title": "Update the Customer/User view so that when the user selects a different comment list (listId), the previously displayed generated single comment is automatically removed from the user dashboard/result display (UI-only removal). This clearing must happen on list selection change, not only after a new generation completes.",
+      "reqIds": [
+        "REQ-17"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-frontend-error-handling-for-single-comment-generation-so-that-when-the-backend-rejects-generation-due-to-the-1-comment-per-user-per-list-restriction-the-user-sees-a-clear-english-toast-message-reflecting-the-backend-error-no-generic-ambiguous-message",
+      "title": "Update frontend error handling for single comment generation so that when the backend rejects generation due to the 1-comment-per-user-per-list restriction, the user sees a clear English toast/message reflecting the backend error (no generic/ambiguous message).",
+      "reqIds": [
+        "REQ-18"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-generate-and-persist-a-per-device-identifier-in-the-browser-and-reset-it-automatically-when-browser-app-storage-is-cleared-so-each-device-has-an-independent-history-scope-even-when-the-same-internet-identity-principal-logs-in-on-multiple-devices",
+      "title": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+      "reqIds": [
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-update-the-frontend-react-query-layer-and-customer-user-view-to-read-and-display-device-scoped-history-by-passing-the-locally-stored-device-identifier-to-the-backend-ensuring-the-on-screen-history-and-per-list-already-generated-indicators-are-device-specific",
+      "title": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
+      "reqIds": [
+        "REQ-22"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-mirror-device-scoped-history-in-browser-local-storage-so-the-device-can-retain-its-own-history-even-if-the-ui-reloads-and-keep-it-consistent-with-backend-updates-for-the-same-device-identifier",
+      "title": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+      "reqIds": [
+        "REQ-23"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Add bulk comment upload helper: show preview of first 1–3 lines and total line/count before upload for easier verification.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Implement per-user daily limit of 2 single comment generations per app (per comment list/app), while exempting bulk-generation users/operations from this daily limit.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Update the backend single-comment generation limit to be a per-user DAILY limit of 2 successful single comment generations per canister/app, instead of the current lifetime limit. The daily limit must reset automatically based on the current day derived from canister time. This daily limit must NOT apply to bulk-generation operations.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Implement an exemption for \"bulk users\" so that principals recognized as bulk users are not restricted by the 2-per-day limit when calling generateComment(listId). Define and persist a backend-recognized mechanism to classify a caller principal as a bulk user that is consistent with the existing bulk generator access-key flow (i.e., users who can successfully use the bulk generator access key can be treated as bulk users).",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-5",
+      "summary": "Update the frontend UI and user-facing copy in the Customer/User view to reflect that the single-comment limit is a DAILY limit of 2 (not a lifetime limit), and ensure the displayed used/remaining values are consistent with the backend’s daily counter behavior. All user-facing text must be in English.",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Update the backend single-comment generator limit so that each authenticated user (principal) can successfully generate at most 2 single comments per day per canister/app (i.e., across all comment lists). The limit must reset automatically when the canister-day changes based on canister time (Time.now).",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Implement a backend-recognized exemption so that 'bulk users' are not restricted by the 2-per-day single-comment limit. Classify a caller principal as a bulk user in a way that is consistent with the existing bulk generator access-key flow (i.e., principals that have successfully used a valid bulk generator key are treated as bulk users).",
+      "reqIds": [
+        "REQ-8"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Update backend APIs used by the frontend limit display so they reflect the DAILY counter behavior: getUserCommentCount() must return the number of successful single-comment generations for the caller for the current canister-day (0–2), not a lifetime total.",
+      "reqIds": [
+        "REQ-9"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Update the Customer/User View UI copy in the single comment generator limit indicator to explicitly state that the limit is 'per day' (not lifetime) and keep the displayed used/remaining values consistent with the backend daily counter behavior. All user-facing text must be in English.",
+      "reqIds": [
+        "REQ-10"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Change single-comment generator limiting to a DAILY limit of 2 generations per user *name* (as stored/displayed in the selected comment list/app context) rather than per principal; apply this limit in the single comment generator flow.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-11",
+      "summary": "Update the backend single-comment generator so that each comment list (i.e., each listId, used as the “name in the list” context) has a DAILY limit of 2 successful single-comment generations via generateComment(listId). The limit must reset automatically based on the current day derived from canister time (Time.now).",
+      "reqIds": [
+        "REQ-11"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-12",
+      "summary": "When the per-list daily limit is reached for a listId, generateComment(listId) must fail with a clear, user-facing English error message (trap) indicating the daily limit for that name/list has been reached and to try again tomorrow.",
+      "reqIds": [
+        "REQ-12"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-13",
+      "summary": "Persist the per-list daily generation counters in stable state so the daily limit tracking survives canister upgrades.",
+      "reqIds": [
+        "REQ-13"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-14",
+      "summary": "Enforce per-user per-list (listId/name) restriction: each user can generate at most 1 comment for a given existing list name; generating again for the same list should be blocked.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-15",
+      "summary": "When a user switches/selects a different app list name (listId), automatically remove the previously generated comment from that user’s dashboard/history display (UI-only removal; does not return comment to the available pool).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-16",
+      "summary": "Implement \"live list checking\" by tying user-visible comment history to admin-uploaded/approved live lists (no new page): store and display per-user generated comment history data keyed by listId based on the current live list state.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-17",
+      "summary": "Enforce a per-user, per-comment-list restriction in the backend: a caller principal may successfully generate at most 1 single comment for a given existing comment list (listId). If the caller tries to generate another single comment for the same listId again, the backend must reject the call with a clear English error message.",
+      "reqIds": [
+        "REQ-14"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-18",
+      "summary": "Persist per-user per-list single-comment usage tracking in stable state so the 1-comment-per-user-per-list restriction survives canister upgrades. If state schema changes are required, implement a conditional upgrade migration in backend/migration.mo to preserve existing data and initialize any new fields safely.",
+      "reqIds": [
+        "REQ-15"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-19",
+      "summary": "Implement completely independent per-device single-comment history (no merging across devices): store history locally in browser and also persist separate histories in the backend keyed by a device identifier; history should reset when browser/app data is cleared or app is reinstalled.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-21",
+      "summary": "Update the Motoko backend to store and retrieve single-comment generation history keyed by (caller principal, device identifier, listId) so that histories do not merge across devices for the same principal.",
+      "reqIds": [
+        "REQ-20"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-22",
+      "summary": "Extend backend APIs used by the Customer/User view so the frontend can request device-scoped history by providing the device identifier, without changing bulk-generation behavior.",
+      "reqIds": [
+        "REQ-21"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-25",
+      "summary": "Persist the new per-device history structure in stable state and implement a conditional upgrade migration so existing per-principal history data is preserved safely during canister upgrades.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Random Comment Generator App",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

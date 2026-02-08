@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --radius: 1rem;
+        --background: 0.98 0 0;
+        --foreground: 0.15 0 0;
+        --card: 1 0 0;
+        --card-foreground: 0.15 0 0;
+        --popover: 1 0 0;
+        --popover-foreground: 0.15 0 0;
+        --primary: 0.65 0.28 280;
+        --primary-foreground: 0.99 0 0;
+        --secondary: 0.60 0.25 200;
+        --secondary-foreground: 0.99 0 0;
+        --muted: 0.96 0 0;
+        --muted-foreground: 0.50 0 0;
+        --accent: 0.95 0.04 280;
+        --accent-foreground: 0.15 0 0;
+        --destructive: 0.60 0.26 27;
+        --destructive-foreground: 0.99 0 0;
+        --border: 0.90 0 0;
+        --input: 0.92 0 0;
+        --ring: 0.65 0.28 280;
+        --chart-1: 0.68 0.28 260;
+        --chart-2: 0.72 0.26 200;
+        --chart-3: 0.65 0.22 160;
+        --chart-4: 0.78 0.24 320;
+        --chart-5: 0.70 0.22 240;
+        --gradient-start: 0.68 0.32 280;
+        --gradient-mid: 0.65 0.30 240;
+        --gradient-end: 0.72 0.28 200;
+    }
+
+    .dark {
+        --background: 0.10 0 0;
+        --foreground: 0.98 0 0;
+        --card: 0.14 0 0;
+        --card-foreground: 0.98 0 0;
+        --popover: 0.16 0 0;
+        --popover-foreground: 0.98 0 0;
+        --primary: 0.72 0.32 280;
+        --primary-foreground: 0.10 0 0;
+        --secondary: 0.68 0.30 200;
+        --secondary-foreground: 0.10 0 0;
+        --muted: 0.20 0 0;
+        --muted-foreground: 0.65 0 0;
+        --accent: 0.24 0.06 280;
+        --accent-foreground: 0.98 0 0;
+        --destructive: 0.68 0.24 27;
+        --destructive-foreground: 0.98 0 0;
+        --border: 0.22 0 0;
+        --input: 0.22 0 0;
+        --ring: 0.72 0.32 280;
+        --chart-1: 0.72 0.32 260;
+        --chart-2: 0.78 0.30 200;
+        --chart-3: 0.68 0.24 160;
+        --chart-4: 0.82 0.28 320;
+        --chart-5: 0.75 0.26 240;
+        --gradient-start: 0.72 0.34 280;
+        --gradient-mid: 0.68 0.32 240;
+        --gradient-end: 0.78 0.30 200;
+    }
+
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+@layer utilities {
+    .gradient-text {
+        @apply bg-gradient-to-r from-[oklch(var(--gradient-start))] via-[oklch(var(--gradient-mid))] to-[oklch(var(--gradient-end))] bg-clip-text text-transparent;
+    }
+
+    .gradient-bg {
+        @apply bg-gradient-to-r from-[oklch(var(--gradient-start))] via-[oklch(var(--gradient-mid))] to-[oklch(var(--gradient-end))];
+    }
+
+    .gradient-bg-diagonal {
+        @apply bg-gradient-to-br from-[oklch(var(--gradient-start))] via-[oklch(var(--gradient-mid))] to-[oklch(var(--gradient-end))];
+    }
+
+    .btn-glow {
+        @apply shadow-[0_0_24px_rgba(139,92,246,0.4)] hover:shadow-[0_0_36px_rgba(139,92,246,0.6)] transition-shadow duration-300;
+    }
+
+    .card-glow {
+        @apply shadow-[0_8px_36px_rgba(139,92,246,0.12)] hover:shadow-[0_12px_48px_rgba(139,92,246,0.18)] transition-shadow duration-300;
+    }
+}
+
+@keyframes fadeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 0 24px rgba(139, 92, 246, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 48px rgba(139, 92, 246, 0.7);
+    }
+}
+
+.animate-fade-slide-in {
+    animation: fadeSlideIn 0.6s ease-out forwards;
+}
+
+.animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+}

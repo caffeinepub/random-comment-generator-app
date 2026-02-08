@@ -1,0 +1,104 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-08T04:04:23.108Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 6,
+    "implemented": 3,
+    "items": [
+      {
+        "id": "REQ-19",
+        "summary": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/deviceId.ts",
+          "frontend/src/hooks/useDeviceId.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/deviceId.ts",
+          "frontend/src/hooks/useDeviceId.ts"
+        ]
+      },
+      {
+        "id": "REQ-20",
+        "summary": "Update the Motoko backend to store and retrieve single-comment generation history keyed by (caller principal, device identifier, listId) so that histories do not merge across devices for the same principal.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-21",
+        "summary": "Extend backend APIs used by the Customer/User view so the frontend can request device-scoped history by providing the device identifier, without changing bulk-generation behavior.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-22",
+        "summary": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "frontend/src/pages/UserView.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "frontend/src/pages/UserView.tsx"
+        ]
+      },
+      {
+        "id": "REQ-23",
+        "summary": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/utils/deviceHistoryStorage.ts",
+          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "frontend/src/pages/UserView.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/utils/deviceHistoryStorage.ts",
+          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "frontend/src/pages/UserView.tsx"
+        ]
+      },
+      {
+        "id": "REQ-24",
+        "summary": "Persist the new per-device history structure in stable state and implement a conditional upgrade migration so existing per-principal history data is preserved safely during canister upgrades.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useDeviceId.ts",
+    "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+    "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/pages/UserView.tsx",
+    "frontend/src/utils/deviceHistoryStorage.ts",
+    "frontend/src/utils/deviceId.ts",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

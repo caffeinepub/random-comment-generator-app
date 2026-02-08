@@ -1,0 +1,86 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Per-device single-comment history (deviceId + local mirror) – frontend",
+  "requirements": [
+    {
+      "id": "REQ-19",
+      "summary": "Generate and persist a per-device identifier in browser storage, independent of the authenticated principal, and automatically reset when storage is cleared.",
+      "acceptanceCriteria": [
+        "On first app load in a fresh browser profile, a new device identifier is created and stored locally (e.g., localStorage).",
+        "If local browser/app storage is cleared, the next app load generates a different device identifier.",
+        "The device identifier is never derived from the authenticated principal, and switching Internet Identity accounts on the same device does not change the stored device identifier unless local storage is cleared.",
+        "No edits are made to frontend immutable hook files; any new device-id logic is implemented via new utilities/components and consumed by existing code."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/deviceId.ts",
+          "operation": "create",
+          "description": "Add a small device-id utility that (1) reads a stored deviceId from localStorage, (2) generates a new cryptographically-random id when missing (e.g., using crypto.getRandomValues / crypto.randomUUID), and (3) persists it back to localStorage. Ensure it is not derived from the principal and remains stable across logins on the same device until storage is cleared."
+        },
+        {
+          "path": "frontend/src/hooks/useDeviceId.ts",
+          "operation": "create",
+          "description": "Create a React hook that exposes the current deviceId (from utils/deviceId) and can be used by other hooks/pages without requiring changes to existing immutable hooks."
+        }
+      ]
+    },
+    {
+      "id": "REQ-22",
+      "summary": "Update the Customer/User view to fetch and display device-scoped history by passing the locally stored deviceId to backend calls, and ensure single-comment generation updates device-specific history via React Query invalidation.",
+      "acceptanceCriteria": [
+        "The 'Your History' section in the Customer/User view reflects only the current device’s history, not other devices for the same principal.",
+        "The list dropdown indicator (check icon) reflects only the current device’s history.",
+        "Generating a single comment updates history for the current device only (UI refresh via React Query invalidation still works)."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "operation": "create",
+          "description": "Create a device-scoped React Query hook that calls the backend capability to retrieve single-comment history while supplying the local deviceId, and uses a queryKey that includes the deviceId so cache entries do not mix across devices."
+        },
+        {
+          "path": "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "operation": "create",
+          "description": "Create a device-scoped generate-comment mutation hook that calls the backend capability to generate a single comment while supplying the local deviceId, and invalidates device-scoped history queries (and existing remainingCount/availableComments queries) for the selected list."
+        },
+        {
+          "path": "frontend/src/pages/UserView.tsx",
+          "operation": "modify",
+          "description": "Switch the Customer/User view from the non-device-scoped hooks to the new device-scoped hooks for history and single-comment generation. Ensure the 'Your History' section and list dropdown check icon are computed from device-scoped history data, and that after generating a single comment the UI refreshes via React Query invalidation using the device-scoped query key."
+        }
+      ]
+    },
+    {
+      "id": "REQ-23",
+      "summary": "Mirror device-scoped history in localStorage and reconcile it with backend history for the same deviceId on reload, without cross-device merging.",
+      "acceptanceCriteria": [
+        "After generating a single comment, the local device history store is updated for that listId.",
+        "On page reload, the UI can initialize from local device history and then reconcile with backend history for the same device identifier (no cross-device merging).",
+        "If local storage is cleared (deviceId resets), the local mirrored history is also cleared/treated as empty for the new device identifier."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/deviceHistoryStorage.ts",
+          "operation": "create",
+          "description": "Implement localStorage helpers to read/write per-device mirrored history keyed by deviceId (e.g., one key per deviceId). Provide functions to: (1) load initial history for a deviceId, (2) upsert a listId flag after single-comment generation, and (3) overwrite local mirrored history with the reconciled backend result for that same deviceId."
+        },
+        {
+          "path": "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "operation": "modify",
+          "description": "Extend the device-scoped history query hook to (1) seed initial query data from the local mirrored history for the current deviceId, and (2) on successful backend fetch, reconcile/overwrite the local mirrored history for that same deviceId."
+        },
+        {
+          "path": "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "operation": "modify",
+          "description": "Extend the device-scoped generate-comment mutation hook so that after a successful single-comment generation it updates the local mirrored history for the current deviceId/listId and then triggers the existing React Query invalidation to reconcile with backend state."
+        },
+        {
+          "path": "frontend/src/pages/UserView.tsx",
+          "operation": "modify",
+          "description": "Ensure UserView behavior remains consistent on reload by relying on the device-scoped history hook’s localStorage seeding + backend reconciliation; confirm that when deviceId changes due to cleared storage, the view naturally treats history as empty because local mirrored history is keyed by the new deviceId."
+        }
+      ]
+    }
+  ]
+}
