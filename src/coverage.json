@@ -1,101 +1,147 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T04:04:23.108Z",
+  "generatedAt": "2026-02-12T02:24:59.257Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 6,
-    "implemented": 3,
+    "total": 7,
+    "implemented": 7,
     "items": [
       {
-        "id": "REQ-19",
-        "summary": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+        "id": "REQ-1",
+        "summary": "Restore a public (no PIN/no authentication) end-user experience with both a Customer View section and an Upload Section section available without admin unlock, matching the v46 structure as closely as possible.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/deviceId.ts",
-          "frontend/src/hooks/useDeviceId.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/deviceId.ts",
-          "frontend/src/hooks/useDeviceId.ts"
+          "frontend/src/App.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx"
         ]
       },
       {
-        "id": "REQ-20",
-        "summary": "Update the Motoko backend to store and retrieve single-comment generation history keyed by (caller principal, device identifier, listId) so that histories do not merge across devices for the same principal.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-21",
-        "summary": "Extend backend APIs used by the Customer/User view so the frontend can request device-scoped history by providing the device identifier, without changing bulk-generation behavior.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-22",
-        "summary": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
+        "id": "REQ-2",
+        "summary": "Update the app shell/navigation so users can switch between Customer View, Upload Section, and Admin Panel; only Admin Panel must be protected by the existing admin PIN unlock flow.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-          "frontend/src/pages/UserView.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/components/Header.tsx",
+          "frontend/src/components/AdminPinDialog.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-          "frontend/src/pages/UserView.tsx"
+          "frontend/src/App.tsx",
+          "frontend/src/components/Header.tsx"
         ]
       },
       {
-        "id": "REQ-23",
-        "summary": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+        "id": "REQ-3",
+        "summary": "Implement an admin-controlled lock/unlock state per existing “app” (treat as comment list IDs) so that when a list is locked, end users cannot generate comments from that list until it is unlocked.",
         "status": "implemented",
         "plannedFiles": [
-          "frontend/src/utils/deviceHistoryStorage.ts",
-          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminPanel.tsx",
           "frontend/src/pages/UserView.tsx"
         ],
         "matchedFiles": [
-          "frontend/src/utils/deviceHistoryStorage.ts",
-          "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-          "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/pages/AdminPanel.tsx",
           "frontend/src/pages/UserView.tsx"
         ]
       },
       {
-        "id": "REQ-24",
-        "summary": "Persist the new per-device history structure in stable state and implement a conditional upgrade migration so existing per-principal history data is preserved safely during canister upgrades.",
-        "status": "unknown",
-        "plannedFiles": [],
-        "matchedFiles": []
+        "id": "REQ-4",
+        "summary": "Update Customer View and Upload Section UIs to reflect locked lists: indicate lock status in list selection UI and disable/guard generate actions for locked lists with an English explanation.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add an Admin Panel action to download all uploaded rating images in one click.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AdminUserImageTable.tsx",
+          "frontend/package.json",
+          "frontend/src/utils/bulkImageDownload.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts"
+        ]
+      },
+      {
+        "id": "REQ-6",
+        "summary": "Improve perceived performance and fix slowness/lag in the UI, focusing on reducing unnecessary re-renders and expensive visual effects while keeping the interface visually appealing.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AnimatedBackground.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/useQueries.ts",
+          "frontend/src/components/AnimatedBackground.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx"
+        ]
+      },
+      {
+        "id": "REQ-7",
+        "summary": "Improve the overall UI colors/graphics with a coherent visual theme applied consistently across Customer View, Upload Section, and Admin Panel (English UI text).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx"
+        ]
       }
     ]
   },
   "changedFiles": [
     "backend/main.mo",
-    "backend/migration.mo",
     "build-request.json",
     "feature_evidence.json",
     "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
     "frontend/src/backend.d.ts",
     "frontend/src/backend.ts",
+    "frontend/src/components/AnimatedBackground.tsx",
+    "frontend/src/components/Header.tsx",
     "frontend/src/declarations/backend.did.d.ts",
     "frontend/src/declarations/backend.did.js",
-    "frontend/src/hooks/useDeviceId.ts",
     "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
     "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/pages/AdminPanel.tsx",
+    "frontend/src/pages/UploadSection.tsx",
     "frontend/src/pages/UserView.tsx",
-    "frontend/src/utils/deviceHistoryStorage.ts",
-    "frontend/src/utils/deviceId.ts",
+    "frontend/tailwind.config.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

@@ -1,83 +1,68 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-08T04:04:23.104Z",
-  "summary": "Device-scoped history work is partially implemented on the frontend (deviceId generation, device-scoped query/mutation hooks, localStorage mirroring, and UserView wiring). Backend changes are incomplete/unclear from the diff summary, and the provided migration drops legacy history instead of preserving it. Several unrelated UI/admin/style features also appear in the diff summary but were not requested.",
+  "generatedAt": "2026-02-12T02:24:59.254Z",
+  "summary": "Diff implements public Customer/Upload tabs with admin-PIN-gated Admin Panel, adds UI/theme/performance updates, and introduces list lock/unlock querying/mutations and UI guarding. However, the one-click bulk download of all rating images is not evidenced, and backend enforcement/persistence of the lock state is not clearly shown in the truncated backend diff. Several extra features (chat, user profiles/payments, sessions/passwords) appear beyond the BuildRequest.",
   "missing_requirements": [
     {
-      "id": "REQ-20",
-      "requirement": "Backend must store and retrieve single-comment generation history keyed by (caller principal, device identifier, listId), filter history to live listIds, and reject missing/empty device identifiers with a clear English trap error.",
-      "reason": "backend/main.mo shows a new per-device map type but the diff snippet does not show updated generateComment/getUserCommentHistory implementations, live-listId filtering semantics, or explicit rejection of missing/empty deviceId. From the provided summary alone, these acceptance criteria are not evidenced.",
+      "id": "REQ-5",
+      "requirement": "Add an Admin Panel action to download all uploaded rating images in one click (single artifact/flow, stable filenames incl. userName + unique/index, progress + success/failure message).",
+      "reason": "AdminPanel references an image table component, but there is no evidenced button/action/hook for a one-click bulk download flow (e.g., ZIP generation, single download artifact, or backend endpoint to fetch all images at once). The diff summary shows no bulk-download-specific hook or UI control.",
       "evidence": [
-        "backend/main.mo"
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend-file-summaries.txt (AdminPanel mentions Images tab + AdminUserImageTable, but not bulk download)",
+        "frontend/src/hooks/useQueries.ts (truncated; no evidenced bulk-download hook in shown portion)"
       ]
     },
     {
-      "id": "REQ-21",
-      "requirement": "Extend backend APIs so the frontend can request device-scoped single-comment history by providing device identifier, without changing bulk-generation behavior.",
-      "reason": "Frontend calls actor.getUserCommentHistory(deviceId) and actor.generateComment(listId, deviceId), but backend method signatures/implementations are not shown in the diff excerpt. Bulk-generation non-coupling is also not evidenced from the backend diff snippet.",
+      "id": "REQ-3",
+      "requirement": "Backend stores a locked/unlocked flag per comment list ID, persists across reloads, provides admin controls, and blocks customer comment generation for locked lists with a clear error message.",
+      "reason": "Frontend adds queries/mutations and UI checks for locked lists, but the backend diff excerpt only shows in-memory maps (e.g., lockedCommentLists) and does not show stable persistence or generation-time enforcement/error behavior. Because backend/main.mo is truncated, these acceptance-criteria elements are not evidenced.",
       "evidence": [
-        "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-        "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-        "backend/main.mo"
-      ]
-    },
-    {
-      "id": "REQ-24",
-      "requirement": "Persist the new per-device history structure in stable state and implement a conditional upgrade migration that preserves existing per-principal history deterministically and is safe to run multiple times.",
-      "reason": "backend/migration.mo maps legacy per-principal history entries to an empty per-device map, effectively discarding old history. It also does not show assigning legacy data into a deterministic default/legacy device bucket, nor any conditional/idempotent migration guard beyond being a run function.",
-      "evidence": [
-        "backend/migration.mo"
+        "backend/main.mo (truncated: shows `lockedCommentLists`/`lockedCommentListIds` declarations but no stable storage or enforcement code in excerpt)",
+        "frontend/src/hooks/useQueries.ts (shows `useGetLockedCommentListIds` calling `actor.getLockedCommentListIds()` but does not evidence backend persistence/enforcement)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Admin Panel access gated behind a PIN dialog stored in sessionStorage (code 5676), including unlock-state clearing behavior on logout.",
-      "reason": "Not requested in the BuildRequest; unrelated to per-device comment history.",
+      "description": "Admin chat / messaging UI (AdminChatPanel) added to Admin Panel.",
+      "reason": "BuildRequest does not request chat/messaging features; non-goals mention no real-time features beyond existing patterns.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/App.tsx)",
-        "frontend-file-summaries.txt (frontend/src/components/AdminPinDialog.tsx)",
-        "frontend-file-summaries.txt (frontend/src/utils/adminPinSession.ts)"
+        "frontend/src/pages/AdminPanel.tsx (imports `AdminChatPanel`)",
+        "frontend-file-summaries.txt (\"AdminChatPanel\" described with unread counts, thread view, reply composer, etc.)"
       ]
     },
     {
-      "description": "Significant visual/theme enhancements (OKLCH tokens, stronger glow effects, new animations, pulse-glow keyframes) and animated background upgrades.",
-      "reason": "Not requested in the BuildRequest; unrelated to per-device comment history.",
+      "description": "User profile setup modal prompting for name on first login.",
+      "reason": "BuildRequest does not request user profile onboarding or any login flow for non-admin users.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/index.css)",
-        "frontend-file-summaries.txt (frontend/tailwind.config.js)",
-        "frontend-file-summaries.txt (frontend/src/components/AnimatedBackground.tsx)"
+        "frontend-file-summaries.txt (\"frontend/src/components/ProfileSetupModal.tsx\": prompts new users to enter their name on first login)"
       ]
     },
     {
-      "description": "Enhanced chat widget behavior including polling/'real-time' style updates and threaded conversation UI changes.",
-      "reason": "BuildRequest explicitly lists 'Do not add real-time features (WebSockets/push)'; while polling is not WebSockets/push, these chat enhancements are unrelated to the requested per-device history scope.",
+      "description": "Backend wallet balances/payment records/session/password storage structures.",
+      "reason": "BuildRequest is focused on comment generation, list locking, and image bulk download; payments/sessions/password storage are not requested.",
       "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/ChatBox.tsx)"
-      ]
-    },
-    {
-      "description": "New/changed bulk access-key prompting UI via an AccessKeyDialog modal component.",
-      "reason": "BuildRequest did not ask for new UI around bulk generation access keys; it also stated not to change bulk comment generation behavior.",
-      "evidence": [
-        "frontend-file-summaries.txt (frontend/src/components/AccessKeyDialog.tsx)",
-        "frontend/src/pages/UserView.tsx"
+        "backend/main.mo (truncated: shows `userProfiles`, `walletBalances`, `paymentRecords`, `passwordStore`, `activeSessions`, `SessionToken`)"
       ]
     }
   ],
-  "confidence": 0.68,
+  "confidence": 0.62,
   "changed_files": [
     "backend/main.mo",
-    "backend/migration.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/hooks/useDeviceId.ts",
+    "frontend/src/App.tsx",
+    "frontend/src/components/AnimatedBackground.tsx",
+    "frontend/src/components/Header.tsx",
     "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
     "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
     "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/pages/AdminPanel.tsx",
+    "frontend/src/pages/UploadSection.tsx",
     "frontend/src/pages/UserView.tsx",
-    "frontend/src/utils/deviceHistoryStorage.ts",
-    "frontend/src/utils/deviceId.ts",
+    "frontend/tailwind.config.js",
     "project_state.json"
   ]
 }

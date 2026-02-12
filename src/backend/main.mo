@@ -11,11 +11,8 @@ import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
 actor {
-  // Initialize the access control state
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
@@ -35,12 +32,16 @@ actor {
   public type RatingImageMetadata = {
     id : RatingImageId;
     uploader : Principal.Principal;
+    userName : Text;
     timestamp : Time.Time;
     image : Storage.ExternalBlob;
   };
 
   public type UserProfile = {
     name : Text;
+    email : Text;
+    mobileNumber : Text;
+    upiDetails : Text;
   };
 
   public type MessageSide = {
@@ -73,18 +74,44 @@ actor {
 
   let commentLists = Map.empty<CommentListId, List.List<Comment>>();
   var commentListIds = List.empty<CommentListId>();
-
-  let ratingImages = Map.empty<RatingImageId, RatingImageMetadata>();
-  var ratingImageCounter = 0;
-
-  // Bulk generation log
   let bulkGenLogs = Map.empty<Text, BulkGenLog>();
   var bulkGenLogCounter = 0;
 
-  // User Profile Storage
-  let userProfiles = Map.empty<Principal.Principal, UserProfile>();
+  let lockedCommentLists = Map.empty<CommentListId, Bool>();
+  var lockedCommentListIds = List.empty<CommentListId>();
 
-  // Migration-specific non-auth access code
+  // User Profile Storage (keyed by Principal for proper authorization)
+  let userProfiles = Map.empty<Principal.Principal, UserProfile>();
+  let walletBalances = Map.empty<Principal.Principal, Nat>();
+  let paymentRecords = Map.empty<Principal.Principal, List.List<PaymentRecord>>();
+
+  type PaymentStatus = {
+    #pending;
+    #approved;
+    #rejected;
+  };
+
+  type PaymentRecord = {
+    id : Text;
+    userPrincipal : Principal.Principal;
+    amount : Nat;
+    status : PaymentStatus;
+    timestamp : Time.Time;
+  };
+
+  // Password storage (hashed + salted)
+  type PasswordEntry = {
+    hash : Text;
+    salt : Text;
+  };
+
+  let passwordStore = Map.empty<Text, PasswordEntry>();
+
+  // Session storage (session token -> Principal)
+  type SessionToken = Text;
+  let activeSessions = Map.empty<SessionToken, Principal.Principal>();
+  var lastResetTimestamp : Time.Time = 0;
+
   let nonAuthAccessCode = "5676";
 
   // User Comment History Storage (per device)
@@ -94,20 +121,17 @@ actor {
     Map.Map<DeviceId, Map.Map<CommentListId, Bool>>
   >();
 
-  // Bulk Generator Access Key variables (persisted)
   var bulkGeneratorKey : ?Text = null;
-
   include MixinStorage();
 
-  // Helper function to check access code OR admin role
   func assertAdminAccessWithCode(caller : Principal.Principal, accessCode : Text) {
     let isValidCode = accessCode == nonAuthAccessCode;
-    if (not isValidCode) {
+    let isAdmin = AccessControl.isAdmin(accessControlState, caller);
+    if (not isValidCode and not isAdmin) {
       Runtime.trap("Unauthorized: Admin access required. Provide valid access code or admin credentials.");
     };
   };
 
-  // Validate Bulk Generator Key (Throws error if invalid)
   func validateBulkGeneratorKey(providedKey : Text) {
     switch (bulkGeneratorKey) {
       case (null) { Runtime.trap("Bulk generator key has not been set. Please contact the administrator.") };
@@ -119,7 +143,6 @@ actor {
     };
   };
 
-  // Helper function to mask the stored key
   func maskKey(key : Text) : Text {
     let keyLength = key.size();
     let visibleChars = 4;
@@ -127,13 +150,18 @@ actor {
       return "*" # key;
     };
 
-    let charsArray = key.toArray();
-    let lastChars = charsArray.sliceToArray(keyLength - visibleChars, keyLength);
-    let maskedSection = Array.repeat('★', keyLength - visibleChars);
-    Text.fromArray(maskedSection) # Text.fromArray(lastChars);
+    // Ensure safe slicing
+    if (keyLength >= visibleChars) {
+      let charsArray = key.toArray();
+      let lastChars = charsArray.sliceToArray(keyLength - visibleChars, keyLength);
+      let maskedSection = Array.repeat('★', keyLength - visibleChars);
+      return Text.fromArray(maskedSection) # Text.fromArray(lastChars);
+    };
+
+    // Fallback in case of boundary issues
+    key;
   };
 
-  // Admin functions for bulk generator key
   public shared ({ caller }) func setBulkGeneratorKey(accessCode : Text, newKey : Text) : async () {
     assertAdminAccessWithCode(caller, accessCode);
     bulkGeneratorKey := ?newKey;
@@ -144,14 +172,13 @@ actor {
     bulkGeneratorKey := null;
   };
 
-  public shared ({ caller }) func getBulkGeneratorKey(accessCode : Text, masked : Bool) : async ?Text {
+  public query ({ caller }) func getBulkGeneratorKey(accessCode : Text, masked : Bool) : async ?Text {
     assertAdminAccessWithCode(caller, accessCode);
 
     switch (bulkGeneratorKey) {
       case (null) { null };
       case (?key) {
         if (masked) {
-          // Mask all but the last 4 characters if requested
           ?maskKey(key);
         } else {
           ?key;
@@ -160,26 +187,92 @@ actor {
     };
   };
 
-  // User Profile Functions
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
-    // Any authenticated user can get their own profile
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view profiles");
+    };
     userProfiles.get(caller);
   };
 
   public query ({ caller }) func getUserProfile(user : Principal.Principal) : async ?UserProfile {
-    // Users can view their own profile, admins can view any profile
     if (caller != user and not AccessControl.isAdmin(accessControlState, caller)) {
-      Runtime.trap("Unauthorized: Can only view your own profile");
+      Runtime.trap("Unauthorized: Can only view your own profile or must be admin");
     };
     userProfiles.get(user);
   };
 
   public shared ({ caller }) func saveCallerUserProfile(profile : UserProfile) : async () {
-    // Any authenticated user can save their own profile
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can save profiles");
+    };
     userProfiles.add(caller, profile);
   };
 
-  // Comment list management - Admin only with access code support
+  public query ({ caller }) func getWalletBalance() : async Nat {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view wallet balance");
+    };
+    switch (walletBalances.get(caller)) {
+      case (null) { 0 };
+      case (?balance) { balance };
+    };
+  };
+
+  public shared ({ caller }) func addFundsToWallet(accessCode : Text, userPrincipal : Principal.Principal, amount : Nat) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    let currentBalance = switch (walletBalances.get(userPrincipal)) {
+      case (null) { 0 };
+      case (?balance) { balance };
+    };
+    walletBalances.add(userPrincipal, currentBalance + amount);
+  };
+
+  public query ({ caller }) func getPaymentHistory() : async [PaymentRecord] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view payment history");
+    };
+    switch (paymentRecords.get(caller)) {
+      case (null) { [] };
+      case (?records) { records.toArray() };
+    };
+  };
+
+  public shared ({ caller }) func updatePaymentStatus(
+    accessCode : Text,
+    userPrincipal : Principal.Principal,
+    paymentId : Text,
+    newStatus : PaymentStatus,
+  ) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    switch (paymentRecords.get(userPrincipal)) {
+      case (null) { Runtime.trap("No payment records found for user") };
+      case (?records) {
+        let updatedRecords = records.map<PaymentRecord, PaymentRecord>(
+          func(record) {
+            if (record.id == paymentId) {
+              { record with status = newStatus };
+            } else {
+              record;
+            };
+          }
+        );
+        paymentRecords.add(userPrincipal, updatedRecords);
+      };
+    };
+  };
+
+  public query ({ caller }) func getAllPaymentRecords(accessCode : Text) : async [(Principal.Principal, [PaymentRecord])] {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    paymentRecords.entries().toArray().map(
+      func((userPrincipal, records)) {
+        (userPrincipal, records.toArray());
+      }
+    );
+  };
+
   public shared ({ caller }) func createCommentList(accessCode : Text, listId : CommentListId) : async () {
     assertAdminAccessWithCode(caller, accessCode);
     if (commentLists.containsKey(listId)) {
@@ -191,9 +284,8 @@ actor {
     };
   };
 
-  // Add comment - Open access for Upload Section
-  public shared ({ caller }) func addComment(listId : CommentListId, id : CommentId, content : Text) : async () {
-    // Open access - any user can add comments via Upload Section
+  public shared ({ caller }) func addComment(accessCode : Text, listId : CommentListId, id : CommentId, content : Text) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
     let comment : Comment = {
       id;
       content;
@@ -215,7 +307,6 @@ actor {
     };
   };
 
-  // Remove specific comment - Admin only with access code support
   public shared ({ caller }) func removeComment(accessCode : Text, listId : CommentListId, commentId : CommentId) : async () {
     assertAdminAccessWithCode(caller, accessCode);
     switch (commentLists.get(listId)) {
@@ -227,7 +318,6 @@ actor {
     };
   };
 
-  // Reset comment list - Admin only with access code support
   public shared ({ caller }) func resetCommentList(accessCode : Text, listId : CommentListId) : async () {
     assertAdminAccessWithCode(caller, accessCode);
     switch (commentLists.get(listId)) {
@@ -243,14 +333,12 @@ actor {
     };
   };
 
-  // Clear all comment lists - Admin only with access code support
   public shared ({ caller }) func clearAllCommentLists(accessCode : Text) : async () {
     assertAdminAccessWithCode(caller, accessCode);
     commentLists.clear();
     commentListIds.clear();
   };
 
-  // Retrieve all comments in a list - Admin only with access code support
   public query ({ caller }) func getCommentList(accessCode : Text, listId : CommentListId) : async [Comment] {
     assertAdminAccessWithCode(caller, accessCode);
     let comments = switch (commentLists.get(listId)) {
@@ -260,7 +348,6 @@ actor {
     comments.toArray();
   };
 
-  // Delete specific comment list - Admin only with access code support
   public shared ({ caller }) func deleteCommentList(accessCode : Text, listId : CommentListId) : async () {
     assertAdminAccessWithCode(caller, accessCode);
     if (not commentLists.containsKey(listId)) {
@@ -272,7 +359,6 @@ actor {
     commentListIds.addAll(filteredIds.values());
   };
 
-  // Calculate total number of comments - Admin only with access code support
   public query ({ caller }) func getCommentListTotal(accessCode : Text, listId : CommentListId) : async Nat {
     assertAdminAccessWithCode(caller, accessCode);
     switch (commentLists.get(listId)) {
@@ -281,7 +367,6 @@ actor {
     };
   };
 
-  // Calculate bulk totals for all comment lists - Admin only with access code support
   public query ({ caller }) func getAllBulkCommentTotals(accessCode : Text) : async [(CommentListId, Nat)] {
     assertAdminAccessWithCode(caller, accessCode);
     let totals = commentLists.entries().toArray().map(
@@ -292,9 +377,7 @@ actor {
     totals;
   };
 
-  // User functions - Open access
   public query func getAvailableComments(listId : CommentListId) : async ?[Comment] {
-    // Open access - any user can view available comments
     let comments = switch (commentLists.get(listId)) {
       case (null) { List.empty<Comment>() };
       case (?comments) { comments };
@@ -303,96 +386,47 @@ actor {
     if (available.size() == 0) { null } else { ?available };
   };
 
-  // Generate single comment - Open access
-  public shared ({ caller }) func generateComment(listId : CommentListId, deviceId : DeviceId) : async ?Comment {
-    // Enforce single comment limit per user per list per device
-    let callerPrincipal = caller;
-
-    let userHistory = userCommentHistory.get(callerPrincipal);
-    switch (userHistory) {
-      case (null) {
-        // First time caller for any device
-        let deviceHistory = Map.empty<CommentListId, Bool>();
-        deviceHistory.add(listId, true);
-        let newHistory = Map.empty<DeviceId, Map.Map<CommentListId, Bool>>();
-        newHistory.add(deviceId, deviceHistory);
-        userCommentHistory.add(callerPrincipal, newHistory);
-      };
-      case (?history) {
-        let deviceHistory = history.get(deviceId);
-        switch (deviceHistory) {
-          case (null) {
-            // First time for this device
-            let newDeviceHistory = Map.empty<CommentListId, Bool>();
-            newDeviceHistory.add(listId, true);
-            history.add(deviceId, newDeviceHistory);
-          };
-          case (?deviceEntries) {
-            let hasGenerated = switch (deviceEntries.get(listId)) {
-              case (null) { false };
-              case (?used) { used };
-            };
-            if (hasGenerated) {
-              Runtime.trap("You can only generate one comment per list on this device.");
-            } else {
-              deviceEntries.add(listId, true);
-            };
-          };
-        };
-      };
-    };
-
-    // Check if at least one available comment exists
-    let comments = switch (commentLists.get(listId)) {
-      case (null) { List.empty<Comment>() };
-      case (?comments) { comments };
-    };
-    let availableArray = comments.toArray().filter(func(c) { not c.used });
-    if (availableArray.size() == 0) { return null };
-    let selected = availableArray[0];
-    let updatedComments = comments.map<Comment, Comment>(
-      func(comment) {
-        if (comment.id == selected.id) { { comment with used = true } } else { comment };
-      }
-    );
-    commentLists.add(listId, updatedComments);
-    ?selected;
+  public query ({ caller }) func getLockedCommentListsTotal(accessCode : Text) : async Nat {
+    assertAdminAccessWithCode(caller, accessCode);
+    lockedCommentListIds.size();
   };
 
-  public query func getUserCommentHistory(deviceId : DeviceId) : async [(CommentListId, Bool)] {
-    let callerPrincipal = Principal.fromText("iblxj-m7h4g-vv3ae-z5a73-2h2kl-iln3u-suwzp-2itg7-g3vv3-porp5-bqe");
-    let userHistory = userCommentHistory.get(callerPrincipal);
-    let liveLists = getCommentListIdsInternal();
-
-    switch (userHistory) {
-      case (null) { [] };
-      case (?history) {
-        let deviceHistory = history.get(deviceId);
-        switch (deviceHistory) {
-          case (null) { [] };
-          case (?deviceEntries) {
-            let entries = deviceEntries.entries();
-            let filtered = entries.filter(
-              func((listId, status)) {
-                switch (liveLists.values().find(func(id) { id == listId })) {
-                  case (null) { false };
-                  case (?_) { true };
-                };
-              }
-            );
-            filtered.toArray();
-          };
-        };
-      };
-    };
+  public query func getLockedCommentListIds() : async [CommentListId] {
+    getLockedCommentListIdsInternal();
   };
 
   func getCommentListIdsInternal() : [CommentListId] {
     commentListIds.toArray().sort();
   };
 
+  func getLockedCommentListIdsInternal() : [CommentListId] {
+    lockedCommentListIds.toArray().sort();
+  };
+
+  public shared ({ caller }) func lockCommentList(accessCode : Text, listId : CommentListId) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+    lockedCommentLists.add(listId, true);
+    if (not lockedCommentListIds.any(func(id) { id == listId })) {
+      lockedCommentListIds.add(listId);
+    };
+  };
+
+  public shared ({ caller }) func unlockCommentList(accessCode : Text, listId : CommentListId) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+    lockedCommentLists.remove(listId);
+    let filteredIds = lockedCommentListIds.filter(func(id) { id != listId });
+    lockedCommentListIds.clear();
+    lockedCommentListIds.addAll(filteredIds.values());
+  };
+
+  public query func isCommentListLocked(listId : CommentListId) : async Bool {
+    switch (lockedCommentLists.get(listId)) {
+      case (null) { false };
+      case (?_) { true };
+    };
+  };
+
   public query func getRemainingCount(listId : CommentListId) : async Nat {
-    // Open access - any user can view remaining count
     let comments = switch (commentLists.get(listId)) {
       case (null) { List.empty<Comment>() };
       case (?comments) { comments };
@@ -402,18 +436,23 @@ actor {
   };
 
   public query func getCommentListIds() : async [CommentListId] {
-    // Open access - any user can view available list IDs
     getCommentListIdsInternal();
   };
 
-  // Bulk comment generation - Now requires Bulk Generator Key
   public shared ({ caller }) func generateBulkComments(
     bulkGeneratorKey : Text,
     listId : CommentListId,
     count : Nat,
   ) : async [Comment] {
-    // Require valid bulk generator key
     validateBulkGeneratorKey(bulkGeneratorKey);
+
+    // Check if the comment list is locked
+    switch (lockedCommentLists.get(listId)) {
+      case (?true) {
+        Runtime.trap("Comment list is locked. Cannot generate comments from locked lists.");
+      };
+      case (_) { /* not locked, proceed */ };
+    };
 
     let comments = switch (commentLists.get(listId)) {
       case (null) { List.empty<Comment>() };
@@ -434,7 +473,6 @@ actor {
     );
     commentLists.add(listId, updatedComments);
 
-    // Log bulk generation
     bulkGenLogCounter += 1;
     let logId = "bulk_log_" # bulkGenLogCounter.toText();
     let logEntry : BulkGenLog = {
@@ -449,46 +487,96 @@ actor {
     selected;
   };
 
-  // Rating image functions
-  public shared ({ caller }) func uploadRatingImage(image : Storage.ExternalBlob) : async RatingImageId {
-    // Open access - any user can upload rating images
+  // ================== RV Rating Images System (Admin-Only) =====================
+
+  // Maps user names to lists of rating images (RV images)
+  let userRatingImages = Map.empty<Text, List.List<RatingImageMetadata>>();
+  var ratingImageCounter = 0;
+
+  public shared ({ caller }) func uploadRatingImage(accessCode : Text, userName : Text, image : Storage.ExternalBlob) : async RatingImageId {
+    assertAdminAccessWithCode(caller, accessCode);
     ratingImageCounter += 1;
     let imageId = "image_" # ratingImageCounter.toText();
     let ratingImageData : RatingImageMetadata = {
       id = imageId;
       uploader = caller;
+      userName;
       timestamp = Time.now();
       image;
     };
-    ratingImages.add(imageId, ratingImageData);
+
+    // Add to the corresponding user's list
+    let currentList = switch (userRatingImages.get(userName)) {
+      case (null) { List.empty<RatingImageMetadata>() };
+      case (?existing) { existing };
+    };
+    currentList.add(ratingImageData);
+    userRatingImages.add(userName, currentList);
+
     imageId;
   };
 
-  public query ({ caller }) func getAllRatingImages(accessCode : Text) : async [RatingImageMetadata] {
+  public query ({ caller }) func getAllUserRatingImages(accessCode : Text) : async [(Text, [RatingImageMetadata])] {
     assertAdminAccessWithCode(caller, accessCode);
-    ratingImages.values().toArray();
+
+    userRatingImages.entries().toArray().map(
+      func((userName, ratings)) {
+        (userName, ratings.toArray());
+      }
+    );
   };
 
-  public shared ({ caller }) func removeRatingImage(accessCode : Text, imageId : Text) : async () {
+  public query ({ caller }) func getUserRatingImageCount(accessCode : Text, userName : Text) : async Nat {
     assertAdminAccessWithCode(caller, accessCode);
-    switch (ratingImages.get(imageId)) {
-      case (null) { Runtime.trap("Image not found") };
-      case (?_) {
-        ratingImages.remove(imageId);
+
+    switch (userRatingImages.get(userName)) {
+      case (null) { 0 };
+      case (?ratings) { ratings.size() };
+    };
+  };
+
+  public query ({ caller }) func getTotalUserRatingCount(accessCode : Text) : async Nat {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    var total = 0;
+    for ((_, ratings) in userRatingImages.entries()) {
+      total += ratings.size();
+    };
+    total;
+  };
+
+  public query ({ caller }) func downloadAllRatingImages(accessCode : Text) : async [RatingImageMetadata] {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    var allImages = List.empty<RatingImageMetadata>();
+    for ((_, ratings) in userRatingImages.entries()) {
+      allImages.addAll(ratings.values());
+    };
+    allImages.toArray();
+  };
+
+  public shared ({ caller }) func removeRatingImage(accessCode : Text, userName : Text, imageId : Text) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    switch (userRatingImages.get(userName)) {
+      case (null) { Runtime.trap("No rating images found for user") };
+      case (?ratings) {
+        let filtered = ratings.filter(func(r) { r.id != imageId });
+        userRatingImages.add(userName, filtered);
       };
     };
   };
 
-  public shared ({ caller }) func removeAllRatingImages(accessCode : Text) : async () {
+  public shared ({ caller }) func removeAllUserRatingImages(accessCode : Text) : async () {
     assertAdminAccessWithCode(caller, accessCode);
-    ratingImages.clear();
+    userRatingImages.clear();
   };
 
-  // Chat functionality
+  // ================== Messaging System =====================
+
   let messages = Map.empty<MessageId, Message>();
   var messageCounter = 0;
 
-  // Send message (user-side) - Requires user role
   public shared ({ caller }) func sendMessage(content : Text) : async MessageId {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can send messages");
@@ -507,7 +595,6 @@ actor {
     messageId;
   };
 
-  // Reply to message (admin-side with access code)
   public shared ({ caller }) func replyMessage(accessCode : Text, replyContent : Text) : async MessageId {
     assertAdminAccessWithCode(caller, accessCode);
 
@@ -518,25 +605,21 @@ actor {
       side = #admin;
       content = replyContent;
       timestamp = Time.now();
-      isRead = false; // Replies are initially unread for the user
+      isRead = false;
     };
     messages.add(messageId, message);
     messageId;
   };
 
-  // Retrieve all messages (admin-side with access code)
   public query ({ caller }) func getAllMessages(accessCode : Text) : async [Message] {
     assertAdminAccessWithCode(caller, accessCode);
     messages.values().toArray();
   };
 
-  // Retrieve all messages for the conversation (user-side) - Requires user role
   public query ({ caller }) func getMessages() : async [Message] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view messages");
     };
-    // Return all messages (both user and admin sides) for bi-directional chat
     messages.values().toArray();
   };
 };
-

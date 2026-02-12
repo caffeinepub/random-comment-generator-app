@@ -18,7 +18,6 @@ export interface Comment {
 }
 export type CommentId = string;
 export type CommentListId = string;
-export type DeviceId = string;
 export type ExternalBlob = Uint8Array;
 export interface Message {
   'id' : MessageId,
@@ -30,16 +29,32 @@ export interface Message {
 export type MessageId = string;
 export type MessageSide = { 'admin' : null } |
   { 'user' : null };
+export interface PaymentRecord {
+  'id' : string,
+  'status' : PaymentStatus,
+  'userPrincipal' : Principal,
+  'timestamp' : Time,
+  'amount' : bigint,
+}
+export type PaymentStatus = { 'pending' : null } |
+  { 'approved' : null } |
+  { 'rejected' : null };
 export type Principal = Principal;
 export type RatingImageId = string;
 export interface RatingImageMetadata {
   'id' : RatingImageId,
+  'userName' : string,
   'timestamp' : Time,
   'uploader' : Principal,
   'image' : ExternalBlob,
 }
 export type Time = bigint;
-export interface UserProfile { 'name' : string }
+export interface UserProfile {
+  'upiDetails' : string,
+  'name' : string,
+  'mobileNumber' : string,
+  'email' : string,
+}
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
   { 'guest' : null };
@@ -71,22 +86,33 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
-  'addComment' : ActorMethod<[CommentListId, CommentId, string], undefined>,
+  'addComment' : ActorMethod<
+    [string, CommentListId, CommentId, string],
+    undefined
+  >,
+  'addFundsToWallet' : ActorMethod<[string, Principal, bigint], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'clearAllCommentLists' : ActorMethod<[string], undefined>,
   'createCommentList' : ActorMethod<[string, CommentListId], undefined>,
   'deleteCommentList' : ActorMethod<[string, CommentListId], undefined>,
+  'downloadAllRatingImages' : ActorMethod<[string], Array<RatingImageMetadata>>,
   'generateBulkComments' : ActorMethod<
     [string, CommentListId, bigint],
     Array<Comment>
   >,
-  'generateComment' : ActorMethod<[CommentListId, DeviceId], [] | [Comment]>,
   'getAllBulkCommentTotals' : ActorMethod<
     [string],
     Array<[CommentListId, bigint]>
   >,
   'getAllMessages' : ActorMethod<[string], Array<Message>>,
-  'getAllRatingImages' : ActorMethod<[string], Array<RatingImageMetadata>>,
+  'getAllPaymentRecords' : ActorMethod<
+    [string],
+    Array<[Principal, Array<PaymentRecord>]>
+  >,
+  'getAllUserRatingImages' : ActorMethod<
+    [string],
+    Array<[string, Array<RatingImageMetadata>]>
+  >,
   'getAvailableComments' : ActorMethod<[CommentListId], [] | [Array<Comment>]>,
   'getBulkGeneratorKey' : ActorMethod<[string, boolean], [] | [string]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
@@ -94,24 +120,36 @@ export interface _SERVICE {
   'getCommentList' : ActorMethod<[string, CommentListId], Array<Comment>>,
   'getCommentListIds' : ActorMethod<[], Array<CommentListId>>,
   'getCommentListTotal' : ActorMethod<[string, CommentListId], bigint>,
+  'getLockedCommentListIds' : ActorMethod<[], Array<CommentListId>>,
+  'getLockedCommentListsTotal' : ActorMethod<[string], bigint>,
   'getMessages' : ActorMethod<[], Array<Message>>,
+  'getPaymentHistory' : ActorMethod<[], Array<PaymentRecord>>,
   'getRemainingCount' : ActorMethod<[CommentListId], bigint>,
-  'getUserCommentHistory' : ActorMethod<
-    [DeviceId],
-    Array<[CommentListId, boolean]>
-  >,
+  'getTotalUserRatingCount' : ActorMethod<[string], bigint>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'getUserRatingImageCount' : ActorMethod<[string, string], bigint>,
+  'getWalletBalance' : ActorMethod<[], bigint>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
-  'removeAllRatingImages' : ActorMethod<[string], undefined>,
+  'isCommentListLocked' : ActorMethod<[CommentListId], boolean>,
+  'lockCommentList' : ActorMethod<[string, CommentListId], undefined>,
+  'removeAllUserRatingImages' : ActorMethod<[string], undefined>,
   'removeComment' : ActorMethod<[string, CommentListId, CommentId], undefined>,
-  'removeRatingImage' : ActorMethod<[string, string], undefined>,
+  'removeRatingImage' : ActorMethod<[string, string, string], undefined>,
   'replyMessage' : ActorMethod<[string, string], MessageId>,
   'resetBulkGeneratorKey' : ActorMethod<[string], undefined>,
   'resetCommentList' : ActorMethod<[string, CommentListId], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
   'sendMessage' : ActorMethod<[string], MessageId>,
   'setBulkGeneratorKey' : ActorMethod<[string, string], undefined>,
-  'uploadRatingImage' : ActorMethod<[ExternalBlob], RatingImageId>,
+  'unlockCommentList' : ActorMethod<[string, CommentListId], undefined>,
+  'updatePaymentStatus' : ActorMethod<
+    [string, Principal, string, PaymentStatus],
+    undefined
+  >,
+  'uploadRatingImage' : ActorMethod<
+    [string, string, ExternalBlob],
+    RatingImageId
+  >,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

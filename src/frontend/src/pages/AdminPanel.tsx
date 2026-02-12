@@ -8,10 +8,11 @@ import {
   useResetCommentList,
   useDeleteCommentList,
   useGetRemainingCount,
-  useGetAllRatingImages,
-  useRemoveRatingImage,
-  useRemoveAllRatingImages,
   useGetAllBulkCommentTotals,
+  useClearAllCommentLists,
+  useGetLockedCommentListIds,
+  useLockCommentList,
+  useUnlockCommentList,
 } from '../hooks/useQueries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,10 +33,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { Plus, Trash2, RotateCcw, List, Upload, Shield, Image as ImageIcon, Database, Settings, MessageCircle } from 'lucide-react';
+import { Plus, Trash2, RotateCcw, List, Shield, Database, Settings, MessageCircle, Image as ImageIcon, Lock, Unlock } from 'lucide-react';
 import { toast } from 'sonner';
 import BulkGeneratorKeyManager from '../components/BulkGeneratorKeyManager';
 import AdminChatPanel from '../components/AdminChatPanel';
+import AdminUserImageTable from '../components/AdminUserImageTable';
 
 export default function AdminPanel() {
   const [newListId, setNewListId] = useState('');
@@ -44,9 +46,9 @@ export default function AdminPanel() {
   const [singleComment, setSingleComment] = useState('');
 
   const { data: listIds = [] } = useGetCommentListIds();
+  const { data: lockedListIds = [] } = useGetLockedCommentListIds();
   const { data: comments = [] } = useGetCommentList(selectedList);
   const { data: remainingCount = BigInt(0) } = useGetRemainingCount(selectedList);
-  const { data: ratingImages = [], isLoading: imagesLoading } = useGetAllRatingImages();
   const { data: bulkTotals = [] } = useGetAllBulkCommentTotals();
 
   const { mutate: createList, isPending: isCreating } = useCreateCommentList();
@@ -54,10 +56,12 @@ export default function AdminPanel() {
   const { mutate: removeComment } = useRemoveComment();
   const { mutate: resetList } = useResetCommentList();
   const { mutate: deleteList, isPending: isDeleting } = useDeleteCommentList();
-  const { mutate: removeImage } = useRemoveRatingImage();
-  const { mutate: removeAllImages } = useRemoveAllRatingImages();
+  const { mutate: clearAllLists } = useClearAllCommentLists();
+  const { mutate: lockList } = useLockCommentList();
+  const { mutate: unlockList } = useUnlockCommentList();
 
-  // Calculate valid lines for bulk upload preview
+  const lockedListIdsSet = useMemo(() => new Set(lockedListIds), [lockedListIds]);
+
   const validLines = useMemo(() => {
     return bulkComments
       .split('\n')
@@ -83,6 +87,8 @@ export default function AdminPanel() {
     if (!selectedList || totalValidLines === 0) return;
 
     let successCount = 0;
+    let hasError = false;
+
     validLines.forEach((content, index) => {
       const id = `${Date.now()}-${index}`;
       addComment(
@@ -90,10 +96,13 @@ export default function AdminPanel() {
         {
           onSuccess: () => {
             successCount++;
-            if (successCount === validLines.length) {
+            if (successCount === validLines.length && !hasError) {
               setBulkComments('');
               toast.success(`Added ${validLines.length} comments successfully`);
             }
+          },
+          onError: () => {
+            hasError = true;
           },
         }
       );
@@ -134,18 +143,29 @@ export default function AdminPanel() {
     });
   };
 
-  const handleRemoveImage = (imageId: string) => {
-    removeImage(imageId);
+  const handleClearAllLists = () => {
+    clearAllLists();
   };
 
-  const handleRemoveAllImages = () => {
-    removeAllImages();
+  const handleToggleLock = (listId: string) => {
+    const isLocked = lockedListIdsSet.has(listId);
+    if (isLocked) {
+      unlockList(listId, {
+        onSuccess: () => {
+          toast.success(`List "${listId}" unlocked`);
+        },
+      });
+    } else {
+      lockList(listId, {
+        onSuccess: () => {
+          toast.success(`List "${listId}" locked`);
+        },
+      });
+    }
   };
 
   const usedComments = comments.filter((c) => c.used);
   const availableComments = comments.filter((c) => !c.used);
-
-  // Create a map for quick lookup of bulk totals
   const bulkTotalsMap = new Map(bulkTotals.map(([listId, total]) => [listId, Number(total)]));
 
   return (
@@ -156,7 +176,7 @@ export default function AdminPanel() {
         </div>
         <div>
           <h2 className="text-4xl font-extrabold gradient-text">Admin Panel</h2>
-          <p className="text-muted-foreground text-lg">Manage comment lists, rating images, chat, and system settings</p>
+          <p className="text-muted-foreground text-lg">Manage comments, images, chat, and settings</p>
         </div>
       </div>
 
@@ -166,12 +186,8 @@ export default function AdminPanel() {
             Comments
           </TabsTrigger>
           <TabsTrigger value="images" className="text-base font-semibold rounded-lg data-[state=active]:gradient-bg data-[state=active]:text-white">
+            <ImageIcon className="w-4 h-4 mr-2" />
             Images
-            {ratingImages.length > 0 && (
-              <Badge variant="secondary" className="ml-2 gradient-bg text-white border-0">
-                {ratingImages.length}
-              </Badge>
-            )}
           </TabsTrigger>
           <TabsTrigger value="chat" className="text-base font-semibold rounded-lg data-[state=active]:gradient-bg data-[state=active]:text-white">
             <MessageCircle className="w-4 h-4 mr-2" />
@@ -228,18 +244,40 @@ export default function AdminPanel() {
                 ) : (
                   <ScrollArea className="h-[140px]">
                     <div className="space-y-2">
-                      {listIds.map((listId) => (
-                        <Button
-                          key={listId}
-                          variant={selectedList === listId ? 'default' : 'outline'}
-                          className={`w-full justify-start h-11 rounded-xl text-base font-semibold ${
-                            selectedList === listId ? 'gradient-bg btn-glow' : 'border-2 hover:border-[oklch(var(--gradient-mid))]'
-                          }`}
-                          onClick={() => setSelectedList(listId)}
-                        >
-                          {listId}
-                        </Button>
-                      ))}
+                      {listIds.map((listId) => {
+                        const isLocked = lockedListIdsSet.has(listId);
+                        return (
+                          <div key={listId} className="flex items-center gap-2">
+                            <Button
+                              variant={selectedList === listId ? 'default' : 'outline'}
+                              className={`flex-1 justify-start h-11 rounded-xl text-base font-semibold ${
+                                selectedList === listId ? 'gradient-bg btn-glow' : 'border-2 hover:border-[oklch(var(--gradient-mid))]'
+                              }`}
+                              onClick={() => setSelectedList(listId)}
+                            >
+                              {listId}
+                              {isLocked && (
+                                <Badge variant="outline" className="ml-2 text-xs px-2 py-0 border-orange-500/50 text-orange-600 dark:text-orange-400">
+                                  <Lock className="w-3 h-3" />
+                                </Badge>
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleToggleLock(listId)}
+                              className="h-11 w-11 rounded-xl border-2"
+                              title={isLocked ? 'Unlock list' : 'Lock list'}
+                            >
+                              {isLocked ? (
+                                <Lock className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                              ) : (
+                                <Unlock className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   </ScrollArea>
                 )}
@@ -247,7 +285,6 @@ export default function AdminPanel() {
             </Card>
           </div>
 
-          {/* Bulk Comment Totals Card */}
           {listIds.length > 0 && (
             <Card className="card-glow border-2 border-[oklch(var(--gradient-end)/0.2)] rounded-2xl">
               <CardHeader>
@@ -266,6 +303,7 @@ export default function AdminPanel() {
                   <div className="space-y-3">
                     {listIds.map((listId) => {
                       const total = bulkTotalsMap.get(listId) || 0;
+                      const isLocked = lockedListIdsSet.has(listId);
                       return (
                         <div
                           key={listId}
@@ -273,7 +311,15 @@ export default function AdminPanel() {
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
-                              <p className="text-lg font-bold mb-1">{listId}</p>
+                              <div className="flex items-center gap-2 mb-1">
+                                <p className="text-lg font-bold">{listId}</p>
+                                {isLocked && (
+                                  <Badge variant="outline" className="text-xs px-2 py-0 border-orange-500/50 text-orange-600 dark:text-orange-400">
+                                    <Lock className="w-3 h-3 mr-1" />
+                                    Locked
+                                  </Badge>
+                                )}
+                              </div>
                               <p className="text-sm text-muted-foreground">
                                 Total comments in list
                               </p>
@@ -295,357 +341,254 @@ export default function AdminPanel() {
           )}
 
           {selectedList && (
-            <>
-              <Card className="card-glow border-2 border-[oklch(var(--gradient-start)/0.3)] rounded-2xl overflow-hidden">
-                <div className="absolute inset-0 gradient-bg-diagonal opacity-5 pointer-events-none" />
-                <CardHeader className="relative">
-                  <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                      <CardTitle className="text-2xl gradient-text font-bold">Managing: {selectedList}</CardTitle>
-                      <CardDescription className="text-base">Add, view, and manage comments in this list</CardDescription>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="text-lg px-5 py-2 rounded-xl border-2 border-[oklch(var(--gradient-start)/0.5)] font-bold">
-                        {remainingCount.toString()} available
-                      </Badge>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-2 hover:border-[oklch(var(--gradient-start))]">
-                            <RotateCcw className="w-5 h-5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-2xl">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-xl">Reset Comment List?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-base">
-                              This will mark all comments as unused. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleResetList} className="rounded-xl gradient-bg">Reset</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="destructive" 
-                            size="icon" 
-                            className="h-11 w-11 rounded-xl"
-                            disabled={isDeleting}
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent className="rounded-2xl">
-                          <AlertDialogHeader>
-                            <AlertDialogTitle className="text-xl">Delete Comment List?</AlertDialogTitle>
-                            <AlertDialogDescription className="text-base">
-                              This will permanently delete the list "{selectedList}" and all its comments ({comments.length} total). This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                            <AlertDialogAction 
-                              onClick={() => handleDeleteList(selectedList)} 
-                              className="rounded-xl bg-destructive hover:bg-destructive/90"
-                            >
-                              Delete List
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
+            <Card className="card-glow border-2 border-[oklch(var(--gradient-start)/0.3)] rounded-2xl overflow-hidden">
+              <div className="absolute inset-0 gradient-bg-diagonal opacity-5 pointer-events-none" />
+              <CardHeader className="relative">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div>
+                    <CardTitle className="text-2xl gradient-text font-bold">Managing: {selectedList}</CardTitle>
+                    <CardDescription className="text-base">Add, view, and manage comments in this list</CardDescription>
                   </div>
-                </CardHeader>
-                <CardContent className="relative">
-                  <Tabs defaultValue="bulk" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl p-1">
-                      <TabsTrigger value="bulk" className="rounded-lg font-semibold data-[state=active]:gradient-bg data-[state=active]:text-white">
-                        Bulk Upload
-                      </TabsTrigger>
-                      <TabsTrigger value="single" className="rounded-lg font-semibold data-[state=active]:gradient-bg data-[state=active]:text-white">
-                        Single Comment
-                      </TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="bulk" className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="bulk" className="text-sm font-semibold">Comments (one per line)</Label>
-                        <Textarea
-                          id="bulk"
-                          value={bulkComments}
-                          onChange={(e) => setBulkComments(e.target.value)}
-                          placeholder="Enter comments, one per line..."
-                          rows={6}
-                          disabled={isAdding}
-                          className="rounded-xl border-2 text-base"
-                        />
-                      </div>
-                      
-                      {/* Live Preview and Count */}
-                      {bulkComments.trim() && (
-                        <div className="p-4 rounded-xl bg-accent/20 border-2 border-[oklch(var(--gradient-start)/0.2)] space-y-3">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
-                              Upload Preview
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="text-lg px-5 py-2 rounded-xl border-2 border-[oklch(var(--gradient-start)/0.5)] font-bold">
+                      {remainingCount.toString()} available
+                    </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-11 w-11 rounded-xl border-2 hover:border-[oklch(var(--gradient-start))]">
+                          <RotateCcw className="w-5 h-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-xl">Reset Comment List?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-base">
+                            This will mark all comments as unused. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleResetList} className="rounded-xl gradient-bg">Reset</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="destructive" 
+                          size="icon" 
+                          className="h-11 w-11 rounded-xl"
+                          disabled={isDeleting}
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-2xl">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-xl">Delete Comment List?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-base">
+                            This will permanently delete the list "{selectedList}" and all its comments. This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteList(selectedList)} 
+                            className="rounded-xl bg-destructive hover:bg-destructive/90"
+                          >
+                            Delete List
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="relative">
+                <Tabs defaultValue="bulk" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 h-12 rounded-xl p-1">
+                    <TabsTrigger value="bulk" className="rounded-lg font-semibold data-[state=active]:gradient-bg data-[state=active]:text-white">
+                      Bulk Upload
+                    </TabsTrigger>
+                    <TabsTrigger value="single" className="rounded-lg font-semibold data-[state=active]:gradient-bg data-[state=active]:text-white">
+                      Single Comment
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="bulk" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="bulk" className="text-sm font-semibold">Comments (one per line)</Label>
+                      <Textarea
+                        id="bulk"
+                        value={bulkComments}
+                        onChange={(e) => setBulkComments(e.target.value)}
+                        placeholder="Enter comments, one per line..."
+                        rows={6}
+                        disabled={isAdding}
+                        className="rounded-xl border-2 text-base"
+                      />
+                    </div>
+                    
+                    {bulkComments.trim() && (
+                      <div className="p-4 rounded-xl bg-accent/20 border-2 border-[oklch(var(--gradient-start)/0.2)] space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
+                            Upload Preview
+                          </p>
+                          <Badge variant="default" className="gradient-bg border-0 font-bold">
+                            {totalValidLines} comments
+                          </Badge>
+                        </div>
+                        <div className="space-y-1.5">
+                          {previewLines.map((line, idx) => (
+                            <p key={idx} className="text-sm text-foreground/80 truncate">
+                              {idx + 1}. {line}
                             </p>
-                            <Badge variant="default" className="gradient-bg border-0 font-bold">
-                              {totalValidLines} {totalValidLines === 1 ? 'line' : 'lines'}
-                            </Badge>
-                          </div>
-                          {totalValidLines > 0 ? (
-                            <div className="space-y-2">
-                              <p className="text-xs text-muted-foreground">
-                                First {Math.min(3, totalValidLines)} {totalValidLines === 1 ? 'line' : 'lines'} to be uploaded:
-                              </p>
-                              <div className="space-y-1">
-                                {previewLines.map((line, index) => (
-                                  <div key={index} className="text-sm bg-background/50 px-3 py-2 rounded border border-[oklch(var(--gradient-start)/0.2)]">
-                                    {line}
-                                  </div>
-                                ))}
-                              </div>
-                              {totalValidLines > 3 && (
-                                <p className="text-xs text-muted-foreground italic">
-                                  ...and {totalValidLines - 3} more {totalValidLines - 3 === 1 ? 'line' : 'lines'}
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-sm text-muted-foreground">
-                              No valid lines to upload (empty lines will be ignored)
+                          ))}
+                          {totalValidLines > 3 && (
+                            <p className="text-sm text-muted-foreground italic">
+                              ... and {totalValidLines - 3} more
                             </p>
                           )}
                         </div>
-                      )}
-
-                      <Button 
-                        onClick={handleAddBulkComments} 
-                        disabled={totalValidLines === 0 || isAdding} 
-                        className="w-full h-12 rounded-xl gradient-bg btn-glow font-bold"
-                      >
-                        <Upload className="w-5 h-5 mr-2" />
-                        {isAdding ? 'Adding...' : `Add ${totalValidLines} ${totalValidLines === 1 ? 'Comment' : 'Comments'}`}
-                      </Button>
-                    </TabsContent>
-                    <TabsContent value="single" className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="single" className="text-sm font-semibold">Comment Text</Label>
-                        <Textarea
-                          id="single"
-                          value={singleComment}
-                          onChange={(e) => setSingleComment(e.target.value)}
-                          placeholder="Enter a single comment..."
-                          rows={4}
-                          disabled={isAdding}
-                          className="rounded-xl border-2 text-base"
-                        />
                       </div>
-                      <Button 
-                        onClick={handleAddSingleComment} 
-                        disabled={!singleComment.trim() || isAdding} 
-                        className="w-full h-12 rounded-xl gradient-bg btn-glow font-bold"
-                      >
-                        <Plus className="w-5 h-5 mr-2" />
-                        {isAdding ? 'Adding...' : 'Add Comment'}
-                      </Button>
-                    </TabsContent>
-                  </Tabs>
-                </CardContent>
-              </Card>
+                    )}
+                    
+                    <Button 
+                      onClick={handleAddBulkComments} 
+                      disabled={totalValidLines === 0 || isAdding} 
+                      className="w-full h-12 rounded-xl gradient-bg btn-glow font-bold text-base"
+                    >
+                      {isAdding ? 'Adding...' : `Add ${totalValidLines} Comments`}
+                    </Button>
+                  </TabsContent>
+                  <TabsContent value="single" className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="single" className="text-sm font-semibold">Comment Text</Label>
+                      <Textarea
+                        id="single"
+                        value={singleComment}
+                        onChange={(e) => setSingleComment(e.target.value)}
+                        placeholder="Enter a single comment..."
+                        rows={4}
+                        disabled={isAdding}
+                        className="rounded-xl border-2 text-base"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleAddSingleComment} 
+                      disabled={!singleComment.trim() || isAdding} 
+                      className="w-full h-12 rounded-xl gradient-bg btn-glow font-bold text-base"
+                    >
+                      {isAdding ? 'Adding...' : 'Add Comment'}
+                    </Button>
+                  </TabsContent>
+                </Tabs>
 
-              <Card className="card-glow border-2 border-[oklch(var(--gradient-mid)/0.2)] rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-2xl">All Comments ({comments.length})</CardTitle>
-                  <CardDescription className="text-base">
-                    {availableComments.length} available, {usedComments.length} used
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {comments.length === 0 ? (
-                    <p className="text-base text-muted-foreground text-center py-10">No comments in this list yet</p>
-                  ) : (
-                    <ScrollArea className="h-[400px] pr-4">
-                      <div className="space-y-3">
+                <div className="mt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-bold">Comments in List ({comments.length})</h3>
+                    <div className="flex gap-2">
+                      <Badge variant="outline" className="text-sm px-3 py-1 rounded-lg border-2 border-green-500/50 text-green-600 dark:text-green-400">
+                        {availableComments.length} available
+                      </Badge>
+                      <Badge variant="outline" className="text-sm px-3 py-1 rounded-lg border-2 border-orange-500/50 text-orange-600 dark:text-orange-400">
+                        {usedComments.length} used
+                      </Badge>
+                    </div>
+                  </div>
+                  <ScrollArea className="h-[300px] rounded-xl border-2 border-[oklch(var(--gradient-start)/0.2)] p-4">
+                    {comments.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-8">No comments in this list yet</p>
+                    ) : (
+                      <div className="space-y-2">
                         {comments.map((comment) => (
                           <div
                             key={comment.id}
-                            className={`p-5 rounded-xl border-2 transition-all ${
-                              comment.used 
-                                ? 'bg-muted/30 border-muted' 
-                                : 'bg-gradient-to-br from-accent/20 to-accent/5 border-[oklch(var(--gradient-start)/0.2)] hover:border-[oklch(var(--gradient-start)/0.4)]'
-                            }`}
+                            className="p-4 rounded-lg border-2 bg-accent/10 border-[oklch(var(--gradient-start)/0.2)] hover:border-[oklch(var(--gradient-start)/0.4)] transition-all"
                           >
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 space-y-2">
-                                <p className={`text-base leading-relaxed ${comment.used ? 'text-muted-foreground line-through' : 'font-medium'}`}>
-                                  {comment.content}
-                                </p>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <Badge 
-                                    variant={comment.used ? 'secondary' : 'default'} 
-                                    className={`text-xs font-semibold ${!comment.used && 'gradient-bg border-0'}`}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium leading-relaxed">{comment.content}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge
+                                    variant={comment.used ? 'outline' : 'default'}
+                                    className={`text-xs ${
+                                      comment.used
+                                        ? 'border-orange-500/50 text-orange-600 dark:text-orange-400'
+                                        : 'gradient-bg border-0'
+                                    }`}
                                   >
                                     {comment.used ? 'Used' : 'Available'}
                                   </Badge>
-                                  <span className="text-xs text-muted-foreground">
-                                    {new Date(Number(comment.timestamp) / 1000000).toLocaleString()}
-                                  </span>
                                 </div>
                               </div>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="shrink-0 rounded-xl hover:bg-destructive/10">
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-2xl">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle className="text-xl">Delete Comment?</AlertDialogTitle>
-                                    <AlertDialogDescription className="text-base">
-                                      This will permanently remove this comment. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleRemoveComment(comment.id)} className="rounded-xl bg-destructive">
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleRemoveComment(comment.id)}
+                                className="shrink-0 h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
                         ))}
                       </div>
-                    </ScrollArea>
-                  )}
-                </CardContent>
-              </Card>
-            </>
+                    )}
+                  </ScrollArea>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {listIds.length > 0 && (
+            <Card className="card-glow border-2 border-destructive/30 rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-xl text-destructive">Danger Zone</CardTitle>
+                <CardDescription className="text-base">
+                  Irreversible actions that affect all comment lists
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="w-full h-12 rounded-xl font-bold text-base">
+                      <Trash2 className="w-5 h-5 mr-2" />
+                      Clear All Comment Lists
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="rounded-2xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-xl">Clear All Comment Lists?</AlertDialogTitle>
+                      <AlertDialogDescription className="text-base">
+                        This will permanently delete ALL comment lists and their comments. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleClearAllLists} 
+                        className="rounded-xl bg-destructive hover:bg-destructive/90"
+                      >
+                        Clear All Lists
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="images" className="space-y-6 mt-6">
-          <Card className="card-glow border-2 border-[oklch(var(--gradient-end)/0.2)] rounded-2xl">
-            <CardHeader>
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div>
-                  <CardTitle className="flex items-center gap-3 text-2xl">
-                    <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg">
-                      <ImageIcon className="w-5 h-5 text-white" />
-                    </div>
-                    Uploaded Rating Images
-                  </CardTitle>
-                  <CardDescription className="text-base">
-                    View and manage user-uploaded rating images
-                  </CardDescription>
-                </div>
-                {ratingImages.length > 0 && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="sm" className="h-11 rounded-xl font-semibold">
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Remove All
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-2xl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-xl">Remove All Rating Images?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-base">
-                          This will permanently delete all {ratingImages.length} rating images. This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleRemoveAllImages} className="rounded-xl bg-destructive">
-                          Remove All
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {imagesLoading ? (
-                <div className="flex items-center justify-center py-16">
-                  <div className="text-center space-y-4">
-                    <div className="w-16 h-16 border-4 border-transparent border-t-[oklch(var(--gradient-start))] rounded-full animate-spin mx-auto" />
-                    <p className="text-muted-foreground font-medium text-lg">Loading images...</p>
-                  </div>
-                </div>
-              ) : ratingImages.length === 0 ? (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 rounded-2xl gradient-bg-diagonal flex items-center justify-center mx-auto mb-4 shadow-lg">
-                    <ImageIcon className="w-10 h-10 text-white" />
-                  </div>
-                  <p className="text-base text-muted-foreground font-medium">No rating images uploaded yet</p>
-                </div>
-              ) : (
-                <ScrollArea className="h-[600px] pr-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {ratingImages.map((imageData) => (
-                      <Card key={imageData.id} className="overflow-hidden rounded-2xl border-2 border-[oklch(var(--gradient-end)/0.2)] hover:border-[oklch(var(--gradient-end)/0.5)] transition-all card-glow">
-                        <div className="aspect-square relative bg-muted">
-                          <img
-                            src={imageData.image.getDirectURL()}
-                            alt={`Rating by ${imageData.uploader.toString().slice(0, 8)}...`}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                          />
-                        </div>
-                        <CardContent className="p-5 space-y-3">
-                          <div className="space-y-1">
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Uploaded by</p>
-                            <p className="text-sm font-mono truncate bg-accent/30 px-2 py-1 rounded">
-                              {imageData.uploader.toString().slice(0, 12)}...
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Upload time</p>
-                            <p className="text-sm font-medium">
-                              {new Date(Number(imageData.timestamp) / 1000000).toLocaleString()}
-                            </p>
-                          </div>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" size="sm" className="w-full h-10 rounded-xl font-semibold">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Remove
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="rounded-2xl">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-xl">Remove Rating Image?</AlertDialogTitle>
-                                <AlertDialogDescription className="text-base">
-                                  This will permanently delete this rating image. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleRemoveImage(imageData.id)} className="rounded-xl bg-destructive">
-                                  Remove
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
-              )}
-            </CardContent>
-          </Card>
+        <TabsContent value="images" className="mt-6">
+          <AdminUserImageTable />
         </TabsContent>
 
-        <TabsContent value="chat" className="space-y-6 mt-6">
+        <TabsContent value="chat" className="mt-6">
           <AdminChatPanel />
         </TabsContent>
 
-        <TabsContent value="settings" className="space-y-6 mt-6">
+        <TabsContent value="settings" className="mt-6">
           <BulkGeneratorKeyManager />
         </TabsContent>
       </Tabs>

@@ -11,27 +11,27 @@
         --card-foreground: 0.15 0 0;
         --popover: 1 0 0;
         --popover-foreground: 0.15 0 0;
-        --primary: 0.65 0.28 280;
+        --primary: 0.68 0.30 260;
         --primary-foreground: 0.99 0 0;
-        --secondary: 0.60 0.25 200;
+        --secondary: 0.65 0.28 200;
         --secondary-foreground: 0.99 0 0;
         --muted: 0.96 0 0;
         --muted-foreground: 0.50 0 0;
-        --accent: 0.95 0.04 280;
+        --accent: 0.95 0.05 260;
         --accent-foreground: 0.15 0 0;
-        --destructive: 0.60 0.26 27;
+        --destructive: 0.62 0.28 27;
         --destructive-foreground: 0.99 0 0;
         --border: 0.90 0 0;
         --input: 0.92 0 0;
-        --ring: 0.65 0.28 280;
-        --chart-1: 0.68 0.28 260;
-        --chart-2: 0.72 0.26 200;
-        --chart-3: 0.65 0.22 160;
-        --chart-4: 0.78 0.24 320;
-        --chart-5: 0.70 0.22 240;
-        --gradient-start: 0.68 0.32 280;
-        --gradient-mid: 0.65 0.30 240;
-        --gradient-end: 0.72 0.28 200;
+        --ring: 0.68 0.30 260;
+        --chart-1: 0.70 0.30 260;
+        --chart-2: 0.74 0.28 200;
+        --chart-3: 0.67 0.24 160;
+        --chart-4: 0.80 0.26 320;
+        --chart-5: 0.72 0.24 240;
+        --gradient-start: 0.70 0.34 260;
+        --gradient-mid: 0.67 0.32 220;
+        --gradient-end: 0.74 0.30 180;
     }
 
     .dark {
@@ -41,27 +41,27 @@
         --card-foreground: 0.98 0 0;
         --popover: 0.16 0 0;
         --popover-foreground: 0.98 0 0;
-        --primary: 0.72 0.32 280;
+        --primary: 0.74 0.34 260;
         --primary-foreground: 0.10 0 0;
-        --secondary: 0.68 0.30 200;
+        --secondary: 0.70 0.32 200;
         --secondary-foreground: 0.10 0 0;
         --muted: 0.20 0 0;
         --muted-foreground: 0.65 0 0;
-        --accent: 0.24 0.06 280;
+        --accent: 0.24 0.08 260;
         --accent-foreground: 0.98 0 0;
-        --destructive: 0.68 0.24 27;
+        --destructive: 0.70 0.26 27;
         --destructive-foreground: 0.98 0 0;
         --border: 0.22 0 0;
         --input: 0.22 0 0;
-        --ring: 0.72 0.32 280;
-        --chart-1: 0.72 0.32 260;
-        --chart-2: 0.78 0.30 200;
-        --chart-3: 0.68 0.24 160;
-        --chart-4: 0.82 0.28 320;
-        --chart-5: 0.75 0.26 240;
-        --gradient-start: 0.72 0.34 280;
-        --gradient-mid: 0.68 0.32 240;
-        --gradient-end: 0.78 0.30 200;
+        --ring: 0.74 0.34 260;
+        --chart-1: 0.74 0.34 260;
+        --chart-2: 0.80 0.32 200;
+        --chart-3: 0.70 0.26 160;
+        --chart-4: 0.84 0.30 320;
+        --chart-5: 0.77 0.28 240;
+        --gradient-start: 0.74 0.36 260;
+        --gradient-mid: 0.70 0.34 220;
+        --gradient-end: 0.80 0.32 180;
     }
 
     * {
@@ -86,11 +86,11 @@
     }
 
     .btn-glow {
-        @apply shadow-[0_0_24px_rgba(139,92,246,0.4)] hover:shadow-[0_0_36px_rgba(139,92,246,0.6)] transition-shadow duration-300;
+        @apply shadow-[0_0_20px_rgba(139,92,246,0.35)] hover:shadow-[0_0_32px_rgba(139,92,246,0.55)] transition-shadow duration-300;
     }
 
     .card-glow {
-        @apply shadow-[0_8px_36px_rgba(139,92,246,0.12)] hover:shadow-[0_12px_48px_rgba(139,92,246,0.18)] transition-shadow duration-300;
+        @apply shadow-[0_6px_32px_rgba(139,92,246,0.10)] hover:shadow-[0_10px_44px_rgba(139,92,246,0.16)] transition-shadow duration-300;
     }
 }
 
@@ -107,10 +107,10 @@
 
 @keyframes pulse-glow {
     0%, 100% {
-        box-shadow: 0 0 24px rgba(139, 92, 246, 0.5);
+        box-shadow: 0 0 20px rgba(139, 92, 246, 0.45);
     }
     50% {
-        box-shadow: 0 0 48px rgba(139, 92, 246, 0.7);
+        box-shadow: 0 0 40px rgba(139, 92, 246, 0.65);
     }
 }
 

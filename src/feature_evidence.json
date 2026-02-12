@@ -2,32 +2,11 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-generate-and-persist-a-per-device-identifier-in-the-browser-and-reset-it-automatically-when-browser-app-storage-is-cleared-so-each-device-has-an-independent-history-scope-even-when-the-same-internet-identity-principal-logs-in-on-multiple-devices",
-      "featureTitle": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+      "featureId": "feature-restore-a-public-no-pin-no-authentication-end-user-experience-with-both-a-customer-view-section-and-an-upload-section-section-available-without-admin-unlock-matching-the-v46-structure-as-closely-as-possible",
+      "featureTitle": "Restore a public (no PIN/no authentication) end-user experience with both a Customer View section and an Upload Section section available without admin unlock, matching the v46 structure as closely as possible.",
       "files": [
-        "frontend/src/hooks/useDeviceId.ts",
-        "frontend/src/utils/deviceId.ts"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "blob-storage@4.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-19"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-frontend-react-query-layer-and-customer-user-view-to-read-and-display-device-scoped-history-by-passing-the-locally-stored-device-identifier-to-the-backend-ensuring-the-on-screen-history-and-per-list-already-generated-indicators-are-device-specific",
-      "featureTitle": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
-      "files": [
-        "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-        "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+        "frontend/src/App.tsx",
+        "frontend/src/pages/UploadSection.tsx",
         "frontend/src/pages/UserView.tsx"
       ],
       "components": [
@@ -40,18 +19,16 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-22"
+        "REQ-1"
       ],
       "confidence": "high"
     },
     {
-      "featureId": "feature-mirror-device-scoped-history-in-browser-local-storage-so-the-device-can-retain-its-own-history-even-if-the-ui-reloads-and-keep-it-consistent-with-backend-updates-for-the-same-device-identifier",
-      "featureTitle": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+      "featureId": "feature-update-the-app-shell-navigation-so-users-can-switch-between-customer-view-upload-section-and-admin-panel-only-admin-panel-must-be-protected-by-the-existing-admin-pin-unlock-flow",
+      "featureTitle": "Update the app shell/navigation so users can switch between Customer View, Upload Section, and Admin Panel; only Admin Panel must be protected by the existing admin PIN unlock flow.",
       "files": [
-        "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-        "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-        "frontend/src/pages/UserView.tsx",
-        "frontend/src/utils/deviceHistoryStorage.ts"
+        "frontend/src/App.tsx",
+        "frontend/src/components/Header.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -63,7 +40,118 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-23"
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-an-admin-controlled-lock-unlock-state-per-existing-app-treat-as-comment-list-ids-so-that-when-a-list-is-locked-end-users-cannot-generate-comments-from-that-list-until-it-is-unlocked",
+      "featureTitle": "Implement an admin-controlled lock/unlock state per existing “app” (treat as comment list IDs) so that when a list is locked, end users cannot generate comments from that list until it is unlocked.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend/src/pages/UserView.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-update-customer-view-and-upload-section-uis-to-reflect-locked-lists-indicate-lock-status-in-list-selection-ui-and-disable-guard-generate-actions-for-locked-lists-with-an-english-explanation",
+      "featureTitle": "Update Customer View and Upload Section UIs to reflect locked lists: indicate lock status in list selection UI and disable/guard generate actions for locked lists with an English explanation.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/UploadSection.tsx",
+        "frontend/src/pages/UserView.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-admin-panel-action-to-download-all-uploaded-rating-images-in-one-click",
+      "featureTitle": "Add an Admin Panel action to download all uploaded rating images in one click.",
+      "files": [
+        "frontend/src/hooks/useQueries.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-perceived-performance-and-fix-slowness-lag-in-the-ui-focusing-on-reducing-unnecessary-re-renders-and-expensive-visual-effects-while-keeping-the-interface-visually-appealing",
+      "featureTitle": "Improve perceived performance and fix slowness/lag in the UI, focusing on reducing unnecessary re-renders and expensive visual effects while keeping the interface visually appealing.",
+      "files": [
+        "frontend/src/components/AnimatedBackground.tsx",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/pages/UploadSection.tsx",
+        "frontend/src/pages/UserView.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-6"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-improve-the-overall-ui-colors-graphics-with-a-coherent-visual-theme-applied-consistently-across-customer-view-upload-section-and-admin-panel-english-ui-text",
+      "featureTitle": "Improve the overall UI colors/graphics with a coherent visual theme applied consistently across Customer View, Upload Section, and Admin Panel (English UI text).",
+      "files": [
+        "frontend/src/index.css",
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend/src/pages/UploadSection.tsx",
+        "frontend/src/pages/UserView.tsx",
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
       ],
       "confidence": "high"
     }

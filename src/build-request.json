@@ -1,146 +1,148 @@
 {
   "kind": "build_request",
-  "title": "Implement completely independent per-device single-comment history (local + backend)",
+  "title": "Restore public Customer View + Upload Section, keep admin-only unlock, add app lock/unlock + bulk image download, and improve UI/performance",
   "priority": "normal",
   "requirements": [
     {
-      "id": "REQ-19",
-      "text": "Generate and persist a per-device identifier in the browser, and reset it automatically when browser/app storage is cleared, so each device has an independent history scope even when the same Internet Identity principal logs in on multiple devices.",
+      "id": "REQ-1",
+      "text": "Restore a public (no PIN/no authentication) end-user experience with both a Customer View section and an Upload Section section available without admin unlock, matching the v46 structure as closely as possible.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-3",
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Make individual app history for each device",
-          "Yes make it completely independent don't merge all devices history",
-          "3reset"
+          "But where is customer view section or upload section came it back and make same to same as in version 46 no need any pin code or authentication for others users except admin"
         ]
       },
       "acceptanceCriteria": [
-        "On first app load in a fresh browser profile, a new device identifier is created and stored locally (e.g., localStorage).",
-        "If local browser/app storage is cleared, the next app load generates a different device identifier.",
-        "The device identifier is never derived from the authenticated principal, and switching Internet Identity accounts on the same device does not change the stored device identifier unless local storage is cleared.",
-        "No edits are made to frontend immutable hook files; any new device-id logic is implemented via new utilities/components and consumed by existing code."
+        "When opening the app in a fresh session, users can access Customer View and Upload Section without being prompted for an admin PIN.",
+        "Admin PIN gating remains required only for the Admin Panel area.",
+        "Customer View page renders and functions (comment generation, history, bulk generation prompt) without admin unlock.",
+        "Upload Section page renders and functions (upload comment, bulk generator prompt, upload rating image) without admin unlock."
       ]
     },
     {
-      "id": "REQ-20",
-      "text": "Update the Motoko backend to store and retrieve single-comment generation history keyed by (caller principal, device identifier, listId) so that histories do not merge across devices for the same principal.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1",
-          "msg-3",
-          "msg-4"
-        ],
-        "quotes": [
-          "Make individual app history for each device",
-          "Yes make it completely independent don't merge all devices history",
-          "2.yes"
-        ]
-      },
-      "acceptanceCriteria": [
-        "A caller principal can have multiple independent histories, one per device identifier.",
-        "Generating a single comment on Device A does not affect the history returned for Device B when both are logged in with the same principal.",
-        "History remains filtered to live listIds (i.e., listIds not returned by getCommentListIds() are excluded) with the same semantics as the current getUserCommentHistory().",
-        "Backend rejects/handles missing/empty device identifiers with a clear English error message (trap) rather than silently merging into a shared bucket."
-      ]
-    },
-    {
-      "id": "REQ-21",
-      "text": "Extend backend APIs used by the Customer/User view so the frontend can request device-scoped history by providing the device identifier, without changing bulk-generation behavior.",
-      "target": "backend",
-      "source": {
-        "messageIds": [
-          "msg-1",
-          "msg-4"
-        ],
-        "quotes": [
-          "Make individual app history for each device",
-          "1.yes\n2.yes\n3reset"
-        ]
-      },
-      "acceptanceCriteria": [
-        "There is a backend method that returns the caller’s single-comment history for the current device identifier (keyed by listId) suitable for the existing UI history display.",
-        "The existing bulk generation flow (generateBulkComments) remains unaffected and does not write into the per-device single-comment history unless explicitly required elsewhere (do not add new coupling).",
-        "All user-facing/backend error text is in English."
-      ]
-    },
-    {
-      "id": "REQ-22",
-      "text": "Update the frontend React Query layer and Customer/User view to read and display device-scoped history by passing the locally-stored device identifier to the backend, ensuring the on-screen history and per-list “already generated” indicators are device-specific.",
+      "id": "REQ-2",
+      "text": "Update the app shell/navigation so users can switch between Customer View, Upload Section, and Admin Panel; only Admin Panel must be protected by the existing admin PIN unlock flow.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-3",
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Make individual app history for each device",
-          "Yes make it completely independent don't merge all devices history",
-          "1.yes\n2.yes\n3reset"
+          "no need any pin code or authentication for others users except admin"
         ]
       },
       "acceptanceCriteria": [
-        "The 'Your History' section in the Customer/User view reflects only the current device’s history, not other devices for the same principal.",
-        "The list dropdown indicator (check icon) reflects only the current device’s history.",
-        "Generating a single comment updates history for the current device only (UI refresh via React Query invalidation still works)."
+        "There is a clear navigation control (tabs, header links, or similar) to access Customer View, Upload Section, and Admin Panel.",
+        "Attempting to open Admin Panel while not unlocked shows the admin PIN dialog/lock screen.",
+        "Customer View and Upload Section never show the admin PIN dialog."
       ]
     },
     {
-      "id": "REQ-23",
-      "text": "Mirror device-scoped history in browser local storage so the device can retain its own history even if the UI reloads, and keep it consistent with backend updates for the same device identifier.",
+      "id": "REQ-3",
+      "text": "Implement an admin-controlled lock/unlock state per existing “app” (treat as comment list IDs) so that when a list is locked, end users cannot generate comments from that list until it is unlocked.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Lock the existing app means when admin lock any app from admin section user can't able to generate comments through it until admin unlock it"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend stores a locked/unlocked flag per comment list ID and persists it across reloads.",
+        "Admin Panel includes controls to lock/unlock each list.",
+        "When a list is locked, Customer View comment generation for that list is blocked and returns a clear error message.",
+        "When a list is unlocked, normal comment generation resumes."
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "Update Customer View and Upload Section UIs to reflect locked lists: indicate lock status in list selection UI and disable/guard generate actions for locked lists with an English explanation.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "1.yes\n2.yes\n3reset"
+          "user can't able to generate comments through it until admin unlock it"
         ]
       },
       "acceptanceCriteria": [
-        "After generating a single comment, the local device history store is updated for that listId.",
-        "On page reload, the UI can initialize from local device history and then reconcile with backend history for the same device identifier (no cross-device merging).",
-        "If local storage is cleared (deviceId resets), the local mirrored history is also cleared/treated as empty for the new device identifier."
+        "Locked lists are visibly labeled (e.g., 'Locked') in the list selector and/or near the action buttons.",
+        "Generate Comment and Bulk Generate actions cannot be executed for locked lists; the UI shows an English message explaining the list is locked by the admin.",
+        "Unlocked lists behave as before."
       ]
     },
     {
-      "id": "REQ-24",
-      "text": "Persist the new per-device history structure in stable state and implement a conditional upgrade migration so existing per-principal history data is preserved safely during canister upgrades.",
-      "target": "backend",
+      "id": "REQ-5",
+      "text": "Add an Admin Panel action to download all uploaded rating images in one click.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1",
-          "msg-4"
+          "msg-1"
         ],
         "quotes": [
-          "Make individual app history for each device",
-          "2.yes"
+          "Also download the uploaded images in one click through the admin panel",
+          "make easy to download all the images in one click only"
         ]
       },
       "acceptanceCriteria": [
-        "Upgrading the canister does not erase existing history data.",
-        "If legacy per-principal history exists, it is migrated into the new structure in a deterministic way (e.g., assigned to a default/legacy device bucket) without breaking current users.",
-        "Migration is conditional and safe to run multiple times (no traps, no duplicate state corruption)."
+        "Admin Panel provides a single button/action labeled in English to download all uploaded images.",
+        "Clicking the action results in a single download artifact for the admin (e.g., a ZIP) or a single action that triggers a complete bulk download flow without requiring per-image clicks.",
+        "The download includes all stored uploaded rating images with stable filenames that include at least the associated userName and an index or unique ID.",
+        "The action provides loading/progress feedback and a success/failure toast/message."
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "text": "Improve perceived performance and fix slowness/lag in the UI, focusing on reducing unnecessary re-renders and expensive visual effects while keeping the interface visually appealing.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Sometimes website runs late"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Customer View and Upload Section initial render completes without long blocking spinners under normal conditions.",
+        "Animations/background effects do not noticeably degrade responsiveness on typical devices (e.g., scrolling, opening dialogs, switching tabs).",
+        "React Query usage avoids redundant refetch loops and heavy work on every render for the main pages."
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "text": "Improve the overall UI colors/graphics with a coherent visual theme applied consistently across Customer View, Upload Section, and Admin Panel (English UI text).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Improve the graphics or colours also on it"
+        ]
+      },
+      "acceptanceCriteria": [
+        "A single cohesive theme (colors, gradients, shadows, typography, spacing) is applied across all major pages.",
+        "Contrast and readability are improved in both light and dark modes.",
+        "Visual polish updates do not remove required functionality."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo (no additional backend services).",
-    "If state schema changes are required, use the existing conditional migration approach and only add/modify backend/migration.mo as needed.",
-    "Do not edit any paths listed in frontend.immutablePaths; compose around them instead.",
-    "Use English for all user-facing text (toasts, labels, error messages)."
+    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if existing stable state requires migration.",
+    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
+    "Use English for all user-facing text."
   ],
   "nonGoals": [
-    "Do not implement daily single-comment limits or change existing per-list/per-user restriction rules beyond making them device-scoped.",
-    "Do not change bulk comment generation access-key behavior or introduce new authentication methods.",
-    "Do not add real-time features (WebSockets/push).",
-    "Do not address unrelated known issues (e.g., non-random selection bias) unless required to complete per-device history."
+    "Adding third-party authentication providers or any login flow for non-admin users.",
+    "Introducing external databases or non-Internet-Computer backend services.",
+    "Building real-time features (WebSockets/chat real-time updates beyond existing polling/query refresh patterns)."
   ],
   "imageRequirements": {
     "required": [],

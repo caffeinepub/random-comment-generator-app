@@ -21,19 +21,28 @@ export const _CaffeineStorageRefillResult = IDL.Record({
 });
 export const CommentListId = IDL.Text;
 export const CommentId = IDL.Text;
+export const Principal = IDL.Principal;
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const RatingImageId = IDL.Text;
 export const Time = IDL.Int;
+export const ExternalBlob = IDL.Vec(IDL.Nat8);
+export const RatingImageMetadata = IDL.Record({
+  'id' : RatingImageId,
+  'userName' : IDL.Text,
+  'timestamp' : Time,
+  'uploader' : Principal,
+  'image' : ExternalBlob,
+});
 export const Comment = IDL.Record({
   'id' : CommentId,
   'content' : IDL.Text,
   'used' : IDL.Bool,
   'timestamp' : Time,
 });
-export const DeviceId = IDL.Text;
 export const MessageId = IDL.Text;
 export const MessageSide = IDL.Variant({
   'admin' : IDL.Null,
@@ -46,16 +55,24 @@ export const Message = IDL.Record({
   'isRead' : IDL.Bool,
   'timestamp' : Time,
 });
-export const RatingImageId = IDL.Text;
-export const Principal = IDL.Principal;
-export const ExternalBlob = IDL.Vec(IDL.Nat8);
-export const RatingImageMetadata = IDL.Record({
-  'id' : RatingImageId,
-  'timestamp' : Time,
-  'uploader' : Principal,
-  'image' : ExternalBlob,
+export const PaymentStatus = IDL.Variant({
+  'pending' : IDL.Null,
+  'approved' : IDL.Null,
+  'rejected' : IDL.Null,
 });
-export const UserProfile = IDL.Record({ 'name' : IDL.Text });
+export const PaymentRecord = IDL.Record({
+  'id' : IDL.Text,
+  'status' : PaymentStatus,
+  'userPrincipal' : Principal,
+  'timestamp' : Time,
+  'amount' : IDL.Nat,
+});
+export const UserProfile = IDL.Record({
+  'upiDetails' : IDL.Text,
+  'name' : IDL.Text,
+  'mobileNumber' : IDL.Text,
+  'email' : IDL.Text,
+});
 
 export const idlService = IDL.Service({
   '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -85,19 +102,24 @@ export const idlService = IDL.Service({
     ),
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-  'addComment' : IDL.Func([CommentListId, CommentId, IDL.Text], [], []),
+  'addComment' : IDL.Func(
+      [IDL.Text, CommentListId, CommentId, IDL.Text],
+      [],
+      [],
+    ),
+  'addFundsToWallet' : IDL.Func([IDL.Text, Principal, IDL.Nat], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'clearAllCommentLists' : IDL.Func([IDL.Text], [], []),
   'createCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
   'deleteCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+  'downloadAllRatingImages' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(RatingImageMetadata)],
+      ['query'],
+    ),
   'generateBulkComments' : IDL.Func(
       [IDL.Text, CommentListId, IDL.Nat],
       [IDL.Vec(Comment)],
-      [],
-    ),
-  'generateComment' : IDL.Func(
-      [CommentListId, DeviceId],
-      [IDL.Opt(Comment)],
       [],
     ),
   'getAllBulkCommentTotals' : IDL.Func(
@@ -106,9 +128,14 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getAllMessages' : IDL.Func([IDL.Text], [IDL.Vec(Message)], ['query']),
-  'getAllRatingImages' : IDL.Func(
+  'getAllPaymentRecords' : IDL.Func(
       [IDL.Text],
-      [IDL.Vec(RatingImageMetadata)],
+      [IDL.Vec(IDL.Tuple(Principal, IDL.Vec(PaymentRecord)))],
+      ['query'],
+    ),
+  'getAllUserRatingImages' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(RatingImageMetadata)))],
       ['query'],
     ),
   'getAvailableComments' : IDL.Func(
@@ -119,7 +146,7 @@ export const idlService = IDL.Service({
   'getBulkGeneratorKey' : IDL.Func(
       [IDL.Text, IDL.Bool],
       [IDL.Opt(IDL.Text)],
-      [],
+      ['query'],
     ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -134,25 +161,42 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       ['query'],
     ),
+  'getLockedCommentListIds' : IDL.Func([], [IDL.Vec(CommentListId)], ['query']),
+  'getLockedCommentListsTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
   'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
+  'getPaymentHistory' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
   'getRemainingCount' : IDL.Func([CommentListId], [IDL.Nat], ['query']),
-  'getUserCommentHistory' : IDL.Func(
-      [DeviceId],
-      [IDL.Vec(IDL.Tuple(CommentListId, IDL.Bool))],
+  'getTotalUserRatingCount' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
+  'getUserProfile' : IDL.Func([Principal], [IDL.Opt(UserProfile)], ['query']),
+  'getUserRatingImageCount' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Nat],
       ['query'],
     ),
-  'getUserProfile' : IDL.Func([Principal], [IDL.Opt(UserProfile)], ['query']),
+  'getWalletBalance' : IDL.Func([], [IDL.Nat], ['query']),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-  'removeAllRatingImages' : IDL.Func([IDL.Text], [], []),
+  'isCommentListLocked' : IDL.Func([CommentListId], [IDL.Bool], ['query']),
+  'lockCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+  'removeAllUserRatingImages' : IDL.Func([IDL.Text], [], []),
   'removeComment' : IDL.Func([IDL.Text, CommentListId, CommentId], [], []),
-  'removeRatingImage' : IDL.Func([IDL.Text, IDL.Text], [], []),
+  'removeRatingImage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
   'replyMessage' : IDL.Func([IDL.Text, IDL.Text], [MessageId], []),
   'resetBulkGeneratorKey' : IDL.Func([IDL.Text], [], []),
   'resetCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
   'sendMessage' : IDL.Func([IDL.Text], [MessageId], []),
   'setBulkGeneratorKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
-  'uploadRatingImage' : IDL.Func([ExternalBlob], [RatingImageId], []),
+  'unlockCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+  'updatePaymentStatus' : IDL.Func(
+      [IDL.Text, Principal, IDL.Text, PaymentStatus],
+      [],
+      [],
+    ),
+  'uploadRatingImage' : IDL.Func(
+      [IDL.Text, IDL.Text, ExternalBlob],
+      [RatingImageId],
+      [],
+    ),
 });
 
 export const idlInitArgs = [];
@@ -171,19 +215,28 @@ export const idlFactory = ({ IDL }) => {
   });
   const CommentListId = IDL.Text;
   const CommentId = IDL.Text;
+  const Principal = IDL.Principal;
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const RatingImageId = IDL.Text;
   const Time = IDL.Int;
+  const ExternalBlob = IDL.Vec(IDL.Nat8);
+  const RatingImageMetadata = IDL.Record({
+    'id' : RatingImageId,
+    'userName' : IDL.Text,
+    'timestamp' : Time,
+    'uploader' : Principal,
+    'image' : ExternalBlob,
+  });
   const Comment = IDL.Record({
     'id' : CommentId,
     'content' : IDL.Text,
     'used' : IDL.Bool,
     'timestamp' : Time,
   });
-  const DeviceId = IDL.Text;
   const MessageId = IDL.Text;
   const MessageSide = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
   const Message = IDL.Record({
@@ -193,16 +246,24 @@ export const idlFactory = ({ IDL }) => {
     'isRead' : IDL.Bool,
     'timestamp' : Time,
   });
-  const RatingImageId = IDL.Text;
-  const Principal = IDL.Principal;
-  const ExternalBlob = IDL.Vec(IDL.Nat8);
-  const RatingImageMetadata = IDL.Record({
-    'id' : RatingImageId,
-    'timestamp' : Time,
-    'uploader' : Principal,
-    'image' : ExternalBlob,
+  const PaymentStatus = IDL.Variant({
+    'pending' : IDL.Null,
+    'approved' : IDL.Null,
+    'rejected' : IDL.Null,
   });
-  const UserProfile = IDL.Record({ 'name' : IDL.Text });
+  const PaymentRecord = IDL.Record({
+    'id' : IDL.Text,
+    'status' : PaymentStatus,
+    'userPrincipal' : Principal,
+    'timestamp' : Time,
+    'amount' : IDL.Nat,
+  });
+  const UserProfile = IDL.Record({
+    'upiDetails' : IDL.Text,
+    'name' : IDL.Text,
+    'mobileNumber' : IDL.Text,
+    'email' : IDL.Text,
+  });
   
   return IDL.Service({
     '_caffeineStorageBlobIsLive' : IDL.Func(
@@ -232,19 +293,24 @@ export const idlFactory = ({ IDL }) => {
       ),
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
-    'addComment' : IDL.Func([CommentListId, CommentId, IDL.Text], [], []),
+    'addComment' : IDL.Func(
+        [IDL.Text, CommentListId, CommentId, IDL.Text],
+        [],
+        [],
+      ),
+    'addFundsToWallet' : IDL.Func([IDL.Text, Principal, IDL.Nat], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'clearAllCommentLists' : IDL.Func([IDL.Text], [], []),
     'createCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
     'deleteCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+    'downloadAllRatingImages' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(RatingImageMetadata)],
+        ['query'],
+      ),
     'generateBulkComments' : IDL.Func(
         [IDL.Text, CommentListId, IDL.Nat],
         [IDL.Vec(Comment)],
-        [],
-      ),
-    'generateComment' : IDL.Func(
-        [CommentListId, DeviceId],
-        [IDL.Opt(Comment)],
         [],
       ),
     'getAllBulkCommentTotals' : IDL.Func(
@@ -253,9 +319,14 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getAllMessages' : IDL.Func([IDL.Text], [IDL.Vec(Message)], ['query']),
-    'getAllRatingImages' : IDL.Func(
+    'getAllPaymentRecords' : IDL.Func(
         [IDL.Text],
-        [IDL.Vec(RatingImageMetadata)],
+        [IDL.Vec(IDL.Tuple(Principal, IDL.Vec(PaymentRecord)))],
+        ['query'],
+      ),
+    'getAllUserRatingImages' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(RatingImageMetadata)))],
         ['query'],
       ),
     'getAvailableComments' : IDL.Func(
@@ -266,7 +337,7 @@ export const idlFactory = ({ IDL }) => {
     'getBulkGeneratorKey' : IDL.Func(
         [IDL.Text, IDL.Bool],
         [IDL.Opt(IDL.Text)],
-        [],
+        ['query'],
       ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
@@ -281,25 +352,46 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         ['query'],
       ),
-    'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
-    'getRemainingCount' : IDL.Func([CommentListId], [IDL.Nat], ['query']),
-    'getUserCommentHistory' : IDL.Func(
-        [DeviceId],
-        [IDL.Vec(IDL.Tuple(CommentListId, IDL.Bool))],
+    'getLockedCommentListIds' : IDL.Func(
+        [],
+        [IDL.Vec(CommentListId)],
         ['query'],
       ),
+    'getLockedCommentListsTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
+    'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
+    'getPaymentHistory' : IDL.Func([], [IDL.Vec(PaymentRecord)], ['query']),
+    'getRemainingCount' : IDL.Func([CommentListId], [IDL.Nat], ['query']),
+    'getTotalUserRatingCount' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
     'getUserProfile' : IDL.Func([Principal], [IDL.Opt(UserProfile)], ['query']),
+    'getUserRatingImageCount' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Nat],
+        ['query'],
+      ),
+    'getWalletBalance' : IDL.Func([], [IDL.Nat], ['query']),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
-    'removeAllRatingImages' : IDL.Func([IDL.Text], [], []),
+    'isCommentListLocked' : IDL.Func([CommentListId], [IDL.Bool], ['query']),
+    'lockCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+    'removeAllUserRatingImages' : IDL.Func([IDL.Text], [], []),
     'removeComment' : IDL.Func([IDL.Text, CommentListId, CommentId], [], []),
-    'removeRatingImage' : IDL.Func([IDL.Text, IDL.Text], [], []),
+    'removeRatingImage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
     'replyMessage' : IDL.Func([IDL.Text, IDL.Text], [MessageId], []),
     'resetBulkGeneratorKey' : IDL.Func([IDL.Text], [], []),
     'resetCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
     'sendMessage' : IDL.Func([IDL.Text], [MessageId], []),
     'setBulkGeneratorKey' : IDL.Func([IDL.Text, IDL.Text], [], []),
-    'uploadRatingImage' : IDL.Func([ExternalBlob], [RatingImageId], []),
+    'unlockCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+    'updatePaymentStatus' : IDL.Func(
+        [IDL.Text, Principal, IDL.Text, PaymentStatus],
+        [],
+        [],
+      ),
+    'uploadRatingImage' : IDL.Func(
+        [IDL.Text, IDL.Text, ExternalBlob],
+        [RatingImageId],
+        [],
+      ),
   });
 };
 

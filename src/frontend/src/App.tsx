@@ -1,139 +1,147 @@
-import { useState } from 'react';
-import { useInternetIdentity } from './hooks/useInternetIdentity';
+import { useState, useEffect } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
 import UserView from './pages/UserView';
 import UploadSection from './pages/UploadSection';
-import ChatBox from './components/ChatBox';
 import AnimatedBackground from './components/AnimatedBackground';
 import AdminPinDialog from './components/AdminPinDialog';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
-import { Button } from '@/components/ui/button';
-import { Shield, Users, Upload } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Users, Upload as UploadIcon, Shield } from 'lucide-react';
+import { useMidnightCommentListClear } from './hooks/useMidnightCommentListClear';
 
-type ViewMode = 'admin' | 'customer' | 'upload';
+type AppView = 'customer' | 'upload' | 'admin';
 
-export default function App() {
-  const { isInitializing } = useInternetIdentity();
-  const [viewMode, setViewMode] = useState<ViewMode>('customer');
+function AppContent() {
+  const [currentView, setCurrentView] = useState<AppView>('customer');
   const [showPinDialog, setShowPinDialog] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
-    // Check sessionStorage on mount
-    return sessionStorage.getItem('adminUnlocked') === 'true';
+    try {
+      return sessionStorage.getItem('adminUnlocked') === 'true';
+    } catch {
+      return false;
+    }
   });
 
-  if (isInitializing) {
-    return (
-      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-background to-[oklch(var(--gradient-start)/0.1)]">
-          <div className="text-center space-y-6">
-            <div className="w-20 h-20 border-4 border-transparent border-t-[oklch(var(--gradient-start))] rounded-full animate-spin mx-auto" />
-            <p className="text-muted-foreground text-lg font-medium">Loading...</p>
-          </div>
-        </div>
-        <Toaster />
-      </ThemeProvider>
-    );
-  }
+  useMidnightCommentListClear(isAdminUnlocked);
 
-  const handleAdminClick = () => {
-    if (isAdminUnlocked) {
-      // Already unlocked, navigate directly
-      setViewMode('admin');
-    } else {
-      // Show PIN dialog
+  const handleViewChange = (view: AppView) => {
+    if (view === 'admin' && !isAdminUnlocked) {
       setShowPinDialog(true);
+    } else {
+      setCurrentView(view);
     }
   };
 
   const handlePinSuccess = () => {
-    // Mark as unlocked in session
-    sessionStorage.setItem('adminUnlocked', 'true');
+    try {
+      sessionStorage.setItem('adminUnlocked', 'true');
+    } catch {
+      // Ignore storage errors
+    }
     setIsAdminUnlocked(true);
     setShowPinDialog(false);
-    setViewMode('admin');
+    setCurrentView('admin');
   };
 
   const handlePinCancel = () => {
     setShowPinDialog(false);
+    if (currentView === 'admin' && !isAdminUnlocked) {
+      setCurrentView('customer');
+    }
+  };
+
+  const handleLogout = () => {
+    try {
+      sessionStorage.removeItem('adminUnlocked');
+    } catch {
+      // Ignore storage errors
+    }
+    setIsAdminUnlocked(false);
+    setCurrentView('customer');
   };
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-[oklch(var(--gradient-start)/0.05)] relative overflow-hidden">
-        <AnimatedBackground />
-        <Header onLogout={() => {
-          // Clear admin unlock on logout
-          sessionStorage.removeItem('adminUnlocked');
-          setIsAdminUnlocked(false);
-          if (viewMode === 'admin') {
-            setViewMode('customer');
-          }
-        }} />
-        
-        {/* Navigation Menu */}
-        <nav className="border-b-2 border-[oklch(var(--gradient-start)/0.2)] bg-card/80 backdrop-blur-md sticky top-[73px] z-40 shadow-md">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <Button
-                onClick={() => setViewMode('customer')}
-                variant={viewMode === 'customer' ? 'default' : 'outline'}
-                className={`h-11 px-6 rounded-xl font-bold transition-all duration-300 ${
-                  viewMode === 'customer'
-                    ? 'gradient-bg btn-glow'
-                    : 'border-2 border-[oklch(var(--gradient-mid)/0.3)] hover:border-[oklch(var(--gradient-mid))] hover:bg-gradient-to-r hover:from-[oklch(var(--gradient-mid)/0.1)] hover:to-[oklch(var(--gradient-end)/0.1)]'
-                }`}
-              >
-                <Users className="w-5 h-5 mr-2" />
-                Customer View
-              </Button>
-              <Button
-                onClick={handleAdminClick}
-                variant={viewMode === 'admin' ? 'default' : 'outline'}
-                className={`h-11 px-6 rounded-xl font-bold transition-all duration-300 ${
-                  viewMode === 'admin'
-                    ? 'gradient-bg btn-glow'
-                    : 'border-2 border-[oklch(var(--gradient-start)/0.3)] hover:border-[oklch(var(--gradient-start))] hover:bg-gradient-to-r hover:from-[oklch(var(--gradient-start)/0.1)] hover:to-[oklch(var(--gradient-mid)/0.1)]'
-                }`}
-              >
-                <Shield className="w-5 h-5 mr-2" />
-                Admin Panel
-              </Button>
-              <Button
-                onClick={() => setViewMode('upload')}
-                variant={viewMode === 'upload' ? 'default' : 'outline'}
-                className={`h-11 px-6 rounded-xl font-bold transition-all duration-300 ${
-                  viewMode === 'upload'
-                    ? 'gradient-bg btn-glow'
-                    : 'border-2 border-[oklch(var(--gradient-end)/0.3)] hover:border-[oklch(var(--gradient-end))] hover:bg-gradient-to-r hover:from-[oklch(var(--gradient-end)/0.1)] hover:to-[oklch(var(--gradient-start)/0.1)]'
-                }`}
-              >
-                <Upload className="w-5 h-5 mr-2" />
-                Upload Section
-              </Button>
-            </div>
-          </div>
-        </nav>
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-[oklch(var(--gradient-start)/0.05)] relative overflow-hidden">
+      <AnimatedBackground />
+      <Header onLogout={handleLogout} isAdminUnlocked={isAdminUnlocked} />
+      
+      <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
+        <Tabs value={currentView} onValueChange={(v) => handleViewChange(v as AppView)} className="w-full">
+          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 h-16 rounded-2xl p-1.5 bg-accent/50 mb-8">
+            <TabsTrigger 
+              value="customer" 
+              className="text-base font-bold rounded-xl data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300 h-full"
+            >
+              <Users className="w-5 h-5 mr-2" />
+              Customer View
+            </TabsTrigger>
+            <TabsTrigger 
+              value="upload" 
+              className="text-base font-bold rounded-xl data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300 h-full"
+            >
+              <UploadIcon className="w-5 h-5 mr-2" />
+              Upload Section
+            </TabsTrigger>
+            <TabsTrigger 
+              value="admin" 
+              className="text-base font-bold rounded-xl data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300 h-full"
+            >
+              <Shield className="w-5 h-5 mr-2" />
+              Admin Panel
+            </TabsTrigger>
+          </TabsList>
 
-        <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
-          {viewMode === 'admin' && <AdminPanel />}
-          {viewMode === 'customer' && <UserView />}
-          {viewMode === 'upload' && <UploadSection />}
-        </main>
-        <Footer />
-        <ChatBox />
+          <TabsContent value="customer" className="mt-0">
+            <UserView />
+          </TabsContent>
+
+          <TabsContent value="upload" className="mt-0">
+            <UploadSection />
+          </TabsContent>
+
+          <TabsContent value="admin" className="mt-0">
+            {isAdminUnlocked ? (
+              <AdminPanel />
+            ) : (
+              <div className="flex items-center justify-center py-20">
+                <div className="text-center space-y-6">
+                  <div className="w-24 h-24 rounded-3xl gradient-bg-diagonal flex items-center justify-center shadow-2xl mx-auto animate-pulse-glow">
+                    <Shield className="w-12 h-12 text-white" />
+                  </div>
+                  <h2 className="text-3xl font-extrabold gradient-text">Admin Access Required</h2>
+                  <p className="text-muted-foreground text-lg max-w-md mx-auto">
+                    Please unlock the admin panel to continue
+                  </p>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </main>
+
+      <Footer />
+
+      <AdminPinDialog
+        open={showPinDialog}
+        onOpenChange={setShowPinDialog}
+        onSuccess={handlePinSuccess}
+        onCancel={handlePinCancel}
+      />
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <AppContent />
         <Toaster />
-
-        {/* Admin PIN Dialog */}
-        <AdminPinDialog
-          open={showPinDialog}
-          onOpenChange={setShowPinDialog}
-          onSuccess={handlePinSuccess}
-          onCancel={handlePinCancel}
-        />
-      </div>
-    </ThemeProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

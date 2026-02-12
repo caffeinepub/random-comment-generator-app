@@ -1,84 +1,210 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Per-device single-comment history (deviceId + local mirror) – frontend",
+  "title": "Public Customer/Upload access with admin-only PIN panel, list lock controls, bulk image download, and UI/performance polish",
   "requirements": [
     {
-      "id": "REQ-19",
-      "summary": "Generate and persist a per-device identifier in browser storage, independent of the authenticated principal, and automatically reset when storage is cleared.",
+      "id": "REQ-1",
+      "summary": "Restore public Customer View and Upload Section access without admin PIN, keeping PIN only for Admin Panel.",
       "acceptanceCriteria": [
-        "On first app load in a fresh browser profile, a new device identifier is created and stored locally (e.g., localStorage).",
-        "If local browser/app storage is cleared, the next app load generates a different device identifier.",
-        "The device identifier is never derived from the authenticated principal, and switching Internet Identity accounts on the same device does not change the stored device identifier unless local storage is cleared.",
-        "No edits are made to frontend immutable hook files; any new device-id logic is implemented via new utilities/components and consumed by existing code."
+        "When opening the app in a fresh session, users can access Customer View and Upload Section without being prompted for an admin PIN.",
+        "Admin PIN gating remains required only for the Admin Panel area.",
+        "Customer View page renders and functions (comment generation, history, bulk generation prompt) without admin unlock.",
+        "Upload Section page renders and functions (upload comment, bulk generator prompt, upload rating image) without admin unlock."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/deviceId.ts",
-          "operation": "create",
-          "description": "Add a small device-id utility that (1) reads a stored deviceId from localStorage, (2) generates a new cryptographically-random id when missing (e.g., using crypto.getRandomValues / crypto.randomUUID), and (3) persists it back to localStorage. Ensure it is not derived from the principal and remains stable across logins on the same device until storage is cleared."
-        },
-        {
-          "path": "frontend/src/hooks/useDeviceId.ts",
-          "operation": "create",
-          "description": "Create a React hook that exposes the current deviceId (from utils/deviceId) and can be used by other hooks/pages without requiring changes to existing immutable hooks."
-        }
-      ]
-    },
-    {
-      "id": "REQ-22",
-      "summary": "Update the Customer/User view to fetch and display device-scoped history by passing the locally stored deviceId to backend calls, and ensure single-comment generation updates device-specific history via React Query invalidation.",
-      "acceptanceCriteria": [
-        "The 'Your History' section in the Customer/User view reflects only the current device’s history, not other devices for the same principal.",
-        "The list dropdown indicator (check icon) reflects only the current device’s history.",
-        "Generating a single comment updates history for the current device only (UI refresh via React Query invalidation still works)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
-          "operation": "create",
-          "description": "Create a device-scoped React Query hook that calls the backend capability to retrieve single-comment history while supplying the local deviceId, and uses a queryKey that includes the deviceId so cache entries do not mix across devices."
-        },
-        {
-          "path": "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-          "operation": "create",
-          "description": "Create a device-scoped generate-comment mutation hook that calls the backend capability to generate a single comment while supplying the local deviceId, and invalidates device-scoped history queries (and existing remainingCount/availableComments queries) for the selected list."
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Refactor the app entry so the default experience is public (Customer View + Upload Section available immediately) and only the Admin Panel route/section triggers the existing AdminPinDialog flow; preserve the existing sessionStorage-based adminUnlocked state. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/UserView.tsx",
           "operation": "modify",
-          "description": "Switch the Customer/User view from the non-device-scoped hooks to the new device-scoped hooks for history and single-comment generation. Ensure the 'Your History' section and list dropdown check icon are computed from device-scoped history data, and that after generating a single comment the UI refreshes via React Query invalidation using the device-scoped query key."
+          "description": "Ensure Customer View remains fully usable without any admin unlock assumptions (no dependency on admin-only data/hooks); keep bulk generator prompt via AccessKeyDialog. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "Ensure Upload Section remains fully usable without any admin unlock assumptions; remove/avoid any admin-only UI elements that imply admin access is required for end users. Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-23",
-      "summary": "Mirror device-scoped history in localStorage and reconcile it with backend history for the same deviceId on reload, without cross-device merging.",
+      "id": "REQ-2",
+      "summary": "Add navigation to switch between Customer View, Upload Section, and Admin Panel, with Admin Panel protected by the existing admin PIN unlock flow.",
       "acceptanceCriteria": [
-        "After generating a single comment, the local device history store is updated for that listId.",
-        "On page reload, the UI can initialize from local device history and then reconcile with backend history for the same device identifier (no cross-device merging).",
-        "If local storage is cleared (deviceId resets), the local mirrored history is also cleared/treated as empty for the new device identifier."
+        "There is a clear navigation control (tabs, header links, or similar) to access Customer View, Upload Section, and Admin Panel.",
+        "Attempting to open Admin Panel while not unlocked shows the admin PIN dialog/lock screen.",
+        "Customer View and Upload Section never show the admin PIN dialog."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/utils/deviceHistoryStorage.ts",
-          "operation": "create",
-          "description": "Implement localStorage helpers to read/write per-device mirrored history keyed by deviceId (e.g., one key per deviceId). Provide functions to: (1) load initial history for a deviceId, (2) upsert a listId flag after single-comment generation, and (3) overwrite local mirrored history with the reconciled backend result for that same deviceId."
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Implement a simple app-shell navigation (e.g., tabs/segmented control) switching among Customer View, Upload Section, and Admin Panel; when Admin Panel is selected and adminUnlocked is false, show AdminPinDialog instead of the panel. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+          "path": "frontend/src/components/Header.tsx",
           "operation": "modify",
-          "description": "Extend the device-scoped history query hook to (1) seed initial query data from the local mirrored history for the current deviceId, and (2) on successful backend fetch, reconcile/overwrite the local mirrored history for that same deviceId."
+          "description": "Update the header to work in public mode: show app-level navigation context and an admin lock/unlock indicator (e.g., 'Admin Locked'/'Admin Unlocked') with a lock action that clears the admin session state; ensure English-only labels. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
+          "path": "frontend/src/components/AdminPinDialog.tsx",
           "operation": "modify",
-          "description": "Extend the device-scoped generate-comment mutation hook so that after a successful single-comment generation it updates the local mirrored history for the current deviceId/listId and then triggers the existing React Query invalidation to reconcile with backend state."
+          "description": "Confirm the PIN dialog can be invoked on-demand from the public shell (not only on initial load) and that cancel returns the user to public sections without blocking. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Expose admin lock/unlock controls for comment lists and enforce lock status in the public experience using existing backend capabilities.",
+      "acceptanceCriteria": [
+        "Backend stores a locked/unlocked flag per comment list ID and persists it across reloads.",
+        "Admin Panel includes controls to lock/unlock each list.",
+        "When a list is locked, Customer View comment generation for that list is blocked and returns a clear error message.",
+        "When a list is unlocked, normal comment generation resumes."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add React Query hooks for existing backend capabilities related to locking: fetching locked list IDs (and/or per-list lock state) and admin mutations to lock/unlock a list; ensure cache invalidation updates list selectors and any dependent UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add list-level lock/unlock controls (admin-only) alongside existing list management UI; show current lock state per list and allow toggling with clear English confirmation/toasts. Verify the component's usage instructions before implementing."
         },
         {
           "path": "frontend/src/pages/UserView.tsx",
           "operation": "modify",
-          "description": "Ensure UserView behavior remains consistent on reload by relying on the device-scoped history hook’s localStorage seeding + backend reconciliation; confirm that when deviceId changes due to cleared storage, the view naturally treats history as empty because local mirrored history is keyed by the new deviceId."
+          "description": "Before attempting comment generation/bulk generation, check lock state (via the new hooks) and block requests for locked lists with a clear English toast/message; ensure behavior updates immediately when admin toggles lock. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Visually label locked lists and disable/guard generate actions in Customer View and Upload Section with an English explanation.",
+      "acceptanceCriteria": [
+        "Locked lists are visibly labeled (e.g., 'Locked') in the list selector and/or near the action buttons.",
+        "Generate Comment and Bulk Generate actions cannot be executed for locked lists; the UI shows an English message explaining the list is locked by the admin.",
+        "Unlocked lists behave as before."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/UserView.tsx",
+          "operation": "modify",
+          "description": "Enhance the list selector UI to display lock status (e.g., a 'Locked' badge text next to list ID) and disable/guard 'Generate Comment' + bulk generation actions when locked, showing an English explanation near the buttons and via toast. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "Update the bulk generator prompt area to reflect lock status for the selected list and prevent bulk generation when locked with an English explanation; keep upload comment/image flows available as before. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Provide a lightweight, cache-friendly way for Customer View/Upload Section to consume lock state (e.g., locked IDs query derived into a Set) to avoid expensive recomputation on every render. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add a one-click Admin Panel bulk download for all uploaded rating images with progress and stable filenames.",
+      "acceptanceCriteria": [
+        "Admin Panel provides a single button/action labeled in English to download all uploaded images.",
+        "Clicking the action results in a single download artifact for the admin (e.g., a ZIP) or a single action that triggers a complete bulk download flow without requiring per-image clicks.",
+        "The download includes all stored uploaded rating images with stable filenames that include at least the associated userName and an index or unique ID.",
+        "The action provides loading/progress feedback and a success/failure toast/message."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Add an admin-only React Query mutation for bulk download that calls the existing backend capability returning all rating image metadata and blobs; surface progress/loading state to the UI. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AdminUserImageTable.tsx",
+          "operation": "modify",
+          "description": "Add a single 'Download All Images' action that fetches all images, builds a single ZIP client-side, and triggers one download; filenames must include userName and an index or unique ID; show progress (e.g., 'Downloading 12/200') and success/failure toasts. Use the blob-storage component's ExternalBlob capabilities (getBytes / getDirectURL as appropriate) to retrieve image bytes; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/package.json",
+          "operation": "modify",
+          "description": "Add a small ZIP creation dependency (or equivalent) used only in the admin bulk download flow to generate a single downloadable artifact without per-image clicks. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/utils/bulkImageDownload.ts",
+          "operation": "create",
+          "description": "Implement a reusable helper to transform a list of rating image metadata into a single ZIP blob with stable filenames and optional progress callbacks; used by AdminUserImageTable. Use the blob-storage component's ExternalBlob getBytes to obtain bytes; verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Reduce UI lag by minimizing re-renders, tuning React Query refetching, and simplifying expensive visual effects.",
+      "acceptanceCriteria": [
+        "Customer View and Upload Section initial render completes without long blocking spinners under normal conditions.",
+        "Animations/background effects do not noticeably degrade responsiveness on typical devices (e.g., scrolling, opening dialogs, switching tabs).",
+        "React Query usage avoids redundant refetch loops and heavy work on every render for the main pages."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Tune React Query settings for public pages (e.g., longer staleTime, less aggressive refetchInterval where safe, and avoid unnecessary invalidations) to reduce background churn while keeping data reasonably fresh. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/AnimatedBackground.tsx",
+          "operation": "modify",
+          "description": "Reduce canvas workload (fewer particles/elements, throttle requestAnimationFrame, pause when tab is hidden, respect prefers-reduced-motion, and avoid heavy blending/shadows) to improve responsiveness while keeping visual appeal. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/UserView.tsx",
+          "operation": "modify",
+          "description": "Reduce avoidable re-renders by memoizing derived values (e.g., computed flags/sets) and keeping event handlers stable where beneficial; ensure no extra heavy work runs on every keystroke/open. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "Reduce avoidable re-renders (memoize derived values and avoid recreating large arrays/strings in render) and ensure upload preview/progress updates remain smooth. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Apply a cohesive, consistent visual theme across Customer View, Upload Section, and Admin Panel with improved readability in light/dark modes.",
+      "acceptanceCriteria": [
+        "A single cohesive theme (colors, gradients, shadows, typography, spacing) is applied across all major pages.",
+        "Contrast and readability are improved in both light and dark modes.",
+        "Visual polish updates do not remove required functionality."
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Refine global theme tokens/utilities (gradients, card glow, focus states, and typographic rhythm) to ensure consistent styling across all major pages in both light/dark modes; keep all user-facing text in English. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Adjust Tailwind theme extensions (colors/shadows/animations) to align with the updated cohesive theme and reduce overly expensive animation defaults where applicable. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure Admin Panel sections (comments/images/chat/settings) align visually with public pages (spacing, card treatments, button variants, and consistent headings) without changing required functionality. Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/UserView.tsx",
+          "operation": "modify",
+          "description": "Align Customer View visuals with the updated theme (consistent cards, labels, selectors, and messaging for states like locked/already-generated). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "Align Upload Section visuals with the updated theme (consistent cards, helper notes, and upload previews) and ensure English-only UI text. Verify the component's usage instructions before implementing."
         }
       ]
     }

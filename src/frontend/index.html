@@ -1,8 +1,23 @@
+<!DOCTYPE html>
 <html lang='en'>
     <head>
         <meta charset='UTF-8' />
         <meta name='viewport' content='width=device-width, initial-scale=1.0' />
         <title>Random Comment Generator App</title>
+        <script>
+            // Pre-React error handler to prevent blank page on fatal errors
+            window.addEventListener('error', function(event) {
+                var root = document.getElementById('root');
+                if (root && !root.hasChildNodes()) {
+                    root.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem;font-family:system-ui,-apple-system,sans-serif;background:#0a0a0a;color:#fafafa"><div style="max-width:28rem;text-align:center"><div style="width:5rem;height:5rem;margin:0 auto 1.5rem;border-radius:50%;background:rgba(239,68,68,0.1);display:flex;align-items:center;justify-content:center"><svg style="width:2.5rem;height:2.5rem;color:#ef4444" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div><h1 style="font-size:1.5rem;font-weight:700;margin-bottom:0.5rem">Application Error</h1><p style="color:#a1a1aa;margin-bottom:1.5rem">The application failed to load. Please refresh the page.</p><button onclick="window.location.reload()" style="width:100%;padding:0.75rem 1.5rem;background:linear-gradient(to right,#8b5cf6,#6366f1);color:white;border:none;border-radius:0.5rem;font-weight:600;cursor:pointer;font-size:1rem">Reload Page</button></div></div>';
+                }
+            });
+
+            // Browser shim for process.env to prevent ReferenceError
+            if (typeof window !== 'undefined' && !window.process) {
+                window.process = { env: {} };
+            }
+        </script>
     </head>
     <body>
         <div id='root'></div>

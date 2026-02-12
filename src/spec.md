@@ -1,14 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Make single-comment generation history completely independent per device, even when the same Internet Identity principal is used on multiple devices, by introducing a locally-generated device identifier and using it to scope history in both frontend and backend.
+**Goal:** Restore public access to Customer View and Upload Section (no PIN), keep Admin Panel PIN-protected, add admin-controlled list lock/unlock and one-click bulk download of uploaded rating images, and improve UI theme and performance.
 
 **Planned changes:**
-- Frontend: generate and persist a per-device identifier in browser storage (resetting automatically when storage is cleared) and pass it through existing query/mutation flows without editing immutable hook files.
-- Backend: store and retrieve single-comment history keyed by (caller principal, device identifier, listId), rejecting missing/empty device identifiers with a clear English error.
-- Backend: extend/add device-scoped history API(s) used by the Customer/User view, without changing bulk generation behavior or coupling it into per-device single-comment history.
-- Frontend: update React Query usage and Customer/User view so “Your History” and per-list “already generated” indicators reflect only the current device’s history.
-- Frontend: mirror device-scoped history in local storage, initialize UI state from it on reload, and reconcile with backend for the same device identifier (clearing/treating as empty when deviceId resets).
-- Backend: persist the new per-device history structure in stable state and add a conditional, repeat-safe upgrade migration that preserves legacy per-principal history by placing it into a deterministic legacy/default device bucket.
+- Restore the v46-like structure so Customer View and Upload Section are publicly accessible without any admin PIN/unlock.
+- Update app navigation so users can switch between Customer View, Upload Section, and Admin Panel, with only Admin Panel protected by the existing admin PIN flow.
+- Add a persistent lock/unlock flag per comment list ID, with Admin Panel controls to lock/unlock lists.
+- Update Customer View and Upload Section to show lock status and prevent generate/bulk-generate actions for locked lists with a clear English explanation.
+- Add an Admin Panel action to download all uploaded rating images in one click (single bulk download artifact/flow), with stable filenames (including userName + index/unique ID) and progress/success/failure feedback.
+- Reduce UI lag by minimizing unnecessary re-renders/refetch loops and toning down expensive visual effects while keeping the UI visually appealing.
+- Apply a cohesive, consistent visual theme (colors/graphics) across Customer View, Upload Section, and Admin Panel with improved readability (light/dark).
 
-**User-visible outcome:** When logged in on multiple devices with the same Internet Identity, each device shows and updates its own independent single-comment history and “already generated” indicators; clearing browser storage resets that device’s history scope.
+**User-visible outcome:** Users can freely use Customer View and Upload Section without any PIN, while admins unlock only the Admin Panel to manage lists (including lock/unlock) and download all uploaded rating images in one click; the app feels faster and has a more consistent look.
