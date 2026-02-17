@@ -1,50 +1,67 @@
 {
   "kind": "spec_vs_diff_report",
   "version": "1.0",
-  "generatedAt": "2026-02-12T02:24:59.254Z",
-  "summary": "Diff implements public Customer/Upload tabs with admin-PIN-gated Admin Panel, adds UI/theme/performance updates, and introduces list lock/unlock querying/mutations and UI guarding. However, the one-click bulk download of all rating images is not evidenced, and backend enforcement/persistence of the lock state is not clearly shown in the truncated backend diff. Several extra features (chat, user profiles/payments, sessions/passwords) appear beyond the BuildRequest.",
+  "generatedAt": "2026-02-17T01:41:53.653Z",
+  "summary": "Frontend scaffolding for Live List Checker UI (user/admin sections), types, styling utilities, and Admin/User page integration is present, but the diff summary does not show corresponding backend Motoko APIs/state, stable upgrade/migration handling, or full enforcement logic. Additionally, the Live List Checker status styling uses a blue theme for 'approved', conflicting with the 'no blue/purple primary theme' requirement.",
   "missing_requirements": [
     {
-      "id": "REQ-5",
-      "requirement": "Add an Admin Panel action to download all uploaded rating images in one click (single artifact/flow, stable filenames incl. userName + unique/index, progress + success/failure message).",
-      "reason": "AdminPanel references an image table component, but there is no evidenced button/action/hook for a one-click bulk download flow (e.g., ZIP generation, single download artifact, or backend endpoint to fetch all images at once). The diff summary shows no bulk-download-specific hook or UI control.",
+      "id": "REQ-1",
+      "requirement": "Backend data models and APIs for name list upload/manage, claim creation with UPI ID, duplicate-claim prevention, claim status tracking (pending/approved/rejected), and admin claim review queries.",
+      "reason": "The diff summary shows only existing backend structures (comments/images/messages/etc.) and does not include any visible Live List Checker storage types or public methods (e.g., uploadNameList, createClaim, getAllClaims, approve/reject) in backend/main.mo; frontend types even note 'until backend implementation is complete'.",
       "evidence": [
-        "frontend/src/pages/AdminPanel.tsx",
-        "frontend-file-summaries.txt (AdminPanel mentions Images tab + AdminUserImageTable, but not bulk download)",
-        "frontend/src/hooks/useQueries.ts (truncated; no evidenced bulk-download hook in shown portion)"
+        "backend/main.mo (truncated; no Live List Checker methods shown)",
+        "frontend/src/types/liveListChecker.ts (\"until backend implementation is complete\")"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "requirement": "Backend support for admin-configurable limits and per-claim amount, enforcement of limits during claim creation, and totals query derived from claims.",
+      "reason": "Frontend calls hooks for settings/totals, but the diff summary does not show backend storage or methods implementing settings, limit enforcement, or totals computation.",
+      "evidence": [
+        "backend/main.mo (truncated; no limits/totals/settings code shown)",
+        "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx (uses useGetLiveListTotals/useSetLiveListSettings/useGetLiveListSettings)"
       ]
     },
     {
       "id": "REQ-3",
-      "requirement": "Backend stores a locked/unlocked flag per comment list ID, persists across reloads, provides admin controls, and blocks customer comment generation for locked lists with a clear error message.",
-      "reason": "Frontend adds queries/mutations and UI checks for locked lists, but the backend diff excerpt only shows in-memory maps (e.g., lockedCommentLists) and does not show stable persistence or generation-time enforcement/error behavior. Because backend/main.mo is truncated, these acceptance-criteria elements are not evidenced.",
+      "requirement": "Backend support for admin-managed public contact info (including WhatsApp number) with persistence across canister upgrades and user-facing query.",
+      "reason": "Frontend UI/hook usage exists, but the diff summary does not show backend state or methods for setting/getting contact info, nor stable persistence handling.",
       "evidence": [
-        "backend/main.mo (truncated: shows `lockedCommentLists`/`lockedCommentListIds` declarations but no stable storage or enforcement code in excerpt)",
-        "frontend/src/hooks/useQueries.ts (shows `useGetLockedCommentListIds` calling `actor.getLockedCommentListIds()` but does not evidence backend persistence/enforcement)"
+        "backend/main.mo (truncated; no contact info storage/methods shown)",
+        "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx (uses useSetContactInfo/useGetContactInfo)",
+        "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx (uses useGetContactInfo)"
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "requirement": "Backend stable upgrade handling for new Live List Checker storage using backend/migration.mo (only if needed), preserving existing unrelated state.",
+      "reason": "No backend/migration.mo changes are shown in the diff summary, and backend/main.mo does not visibly include new stable variables or upgrade hooks for Live List Checker state.",
+      "evidence": [
+        "File diff summary (no backend/migration.mo added/modified)",
+        "backend/main.mo (truncated; no stable upgrade logic for new LLC state shown)"
       ]
     }
   ],
   "hallucinated_features": [
     {
-      "description": "Admin chat / messaging UI (AdminChatPanel) added to Admin Panel.",
-      "reason": "BuildRequest does not request chat/messaging features; non-goals mention no real-time features beyond existing patterns.",
+      "description": "UI theme includes a blue 'Approved' badge styling, conflicting with the requirement to avoid a blue/purple primary theme for the Live List Checker.",
+      "reason": "REQ-8 explicitly says 'Do not use a blue/purple primary theme', but the statusStyles defines 'approved' as blue background/text.",
       "evidence": [
-        "frontend/src/pages/AdminPanel.tsx (imports `AdminChatPanel`)",
-        "frontend-file-summaries.txt (\"AdminChatPanel\" described with unread counts, thread view, reply composer, etc.)"
+        "frontend/src/components/live-list-checker/statusStyles.ts (approved uses bg-blue-100/text-blue-800 etc.)"
       ]
     },
     {
-      "description": "User profile setup modal prompting for name on first login.",
-      "reason": "BuildRequest does not request user profile onboarding or any login flow for non-admin users.",
+      "description": "Global primary color variables are still set to a purple hue (oklch ... 270) in index.css.",
+      "reason": "While LLC-specific variables are added, the diff also shows --primary and --ring remain purple-toned; this is not requested as part of the Live List Checker theme work and may undermine the 'no blue/purple primary theme' intent if used by LLC components.",
       "evidence": [
-        "frontend-file-summaries.txt (\"frontend/src/components/ProfileSetupModal.tsx\": prompts new users to enter their name on first login)"
+        "frontend/src/index.css (--primary: oklch(50% 0.2 270); --ring: oklch(50% 0.2 270); dark mode also uses 270)"
       ]
     },
     {
-      "description": "Backend wallet balances/payment records/session/password storage structures.",
-      "reason": "BuildRequest is focused on comment generation, list locking, and image bulk download; payments/sessions/password storage are not requested.",
+      "description": "Animated background performance/behavior optimizations and other unrelated UI refactors (e.g., ChatBox placeholder, adminPinSession session logic removal).",
+      "reason": "These changes are described in the diff summary but are not part of the BuildRequest requirements for the Live List Checker feature.",
       "evidence": [
-        "backend/main.mo (truncated: shows `userProfiles`, `walletBalances`, `paymentRecords`, `passwordStore`, `activeSessions`, `SessionToken`)"
+        "frontend-file-summaries.txt (AnimatedBackground optimizations; ChatBox placeholder; adminPinSession session storage logic removed)"
       ]
     }
   ],
@@ -52,17 +69,14 @@
   "changed_files": [
     "backend/main.mo",
     "frontend-file-summaries.txt",
-    "frontend/src/App.tsx",
-    "frontend/src/components/AnimatedBackground.tsx",
-    "frontend/src/components/Header.tsx",
-    "frontend/src/hooks/useDeviceScopedGenerateComment.ts",
-    "frontend/src/hooks/useDeviceScopedUserCommentHistory.ts",
+    "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
+    "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
+    "frontend/src/components/live-list-checker/statusStyles.ts",
     "frontend/src/hooks/useQueries.ts",
     "frontend/src/index.css",
     "frontend/src/pages/AdminPanel.tsx",
-    "frontend/src/pages/UploadSection.tsx",
     "frontend/src/pages/UserView.tsx",
-    "frontend/tailwind.config.js",
+    "frontend/src/types/liveListChecker.ts",
     "project_state.json"
   ]
 }

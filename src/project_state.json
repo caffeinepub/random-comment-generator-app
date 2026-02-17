@@ -1,70 +1,40 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Build a web app version matching v46: customer view + upload section, admin-only authentication, admin can lock/unlock apps to prevent user comment generation, admin can download all uploaded images in one click, plus improved UI colors/graphics and performance/bug fixes.",
-  "architectural_notes": [
-    "Locking an app disables user comment generation for that app until unlocked by admin.",
-    "Public users require no authentication; only admin area is authenticated."
-  ],
-  "known_issues": [
-    "Website sometimes runs slow/late.",
-    "Graphics/UI issues reported; requires visual cleanup."
-  ],
-  "isFixRequest": true,
+  "summary": "Integrate a live list checker feature into an existing site: admin uploads a name list; users claim available names with UPI ID; system tracks pending/claimed names, records UPI IDs, calculates totals, enforces admin-set limits, notifies on taken names, and allows admin to manage claims and contact info (including WhatsApp number) via an admin panel.",
+  "architectural_notes": [],
+  "known_issues": [],
+  "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-restore-a-public-no-pin-no-authentication-end-user-experience-with-both-a-customer-view-section-and-an-upload-section-section-available-without-admin-unlock-matching-the-v46-structure-as-closely-as-possible",
-      "title": "Restore a public (no PIN/no authentication) end-user experience with both a Customer View section and an Upload Section section available without admin unlock, matching the v46 structure as closely as possible.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-the-app-shell-navigation-so-users-can-switch-between-customer-view-upload-section-and-admin-panel-only-admin-panel-must-be-protected-by-the-existing-admin-pin-unlock-flow",
-      "title": "Update the app shell/navigation so users can switch between Customer View, Upload Section, and Admin Panel; only Admin Panel must be protected by the existing admin PIN unlock flow.",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-implement-an-admin-controlled-lock-unlock-state-per-existing-app-treat-as-comment-list-ids-so-that-when-a-list-is-locked-end-users-cannot-generate-comments-from-that-list-until-it-is-unlocked",
-      "title": "Implement an admin-controlled lock/unlock state per existing “app” (treat as comment list IDs) so that when a list is locked, end users cannot generate comments from that list until it is unlocked.",
-      "reqIds": [
-        "REQ-3"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-update-customer-view-and-upload-section-uis-to-reflect-locked-lists-indicate-lock-status-in-list-selection-ui-and-disable-guard-generate-actions-for-locked-lists-with-an-english-explanation",
-      "title": "Update Customer View and Upload Section UIs to reflect locked lists: indicate lock status in list selection UI and disable/guard generate actions for locked lists with an English explanation.",
+      "id": "feature-create-extend-frontend-react-query-hooks-in-the-existing-hooks-pattern-used-by-frontend-src-hooks-usequeries-ts-for-uploading-replacing-the-name-list-fetching-the-list-creating-a-claim-with-upi-id-fetching-claim-status-for-a-name-fetching-admin-claim-queues-approving-rejecting-claims-fetching-totals-and-getting-setting-contact-info-and-limits",
+      "title": "Create/extend frontend React Query hooks (in the existing hooks pattern used by frontend/src/hooks/useQueries.ts) for: uploading/replacing the name list, fetching the list, creating a claim with UPI ID, fetching claim status for a name, fetching admin claim queues, approving/rejecting claims, fetching totals, and getting/setting contact info and limits.",
       "reqIds": [
         "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-an-admin-panel-action-to-download-all-uploaded-rating-images-in-one-click",
-      "title": "Add an Admin Panel action to download all uploaded rating images in one click.",
+      "id": "feature-add-a-user-facing-live-list-checker-ui-flow-that-allows-a-user-to-view-instructions-enter-a-name-see-availability-and-if-available-submit-a-claim-by-entering-their-upi-id-the-ui-must-show-clear-feedback-when-a-name-is-already-taken-and-show-the-user-the-status-of-their-submitted-claim-at-least-pending-approved-rejected",
+      "title": "Add a user-facing ‘Live List Checker’ UI flow that allows a user to: view instructions, enter a name, see availability, and if available submit a claim by entering their UPI ID; the UI must show clear feedback when a name is already taken and show the user the status of their submitted claim (at least pending/approved/rejected).",
       "reqIds": [
         "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-perceived-performance-and-fix-slowness-lag-in-the-ui-focusing-on-reducing-unnecessary-re-renders-and-expensive-visual-effects-while-keeping-the-interface-visually-appealing",
-      "title": "Improve perceived performance and fix slowness/lag in the UI, focusing on reducing unnecessary re-renders and expensive visual effects while keeping the interface visually appealing.",
+      "id": "feature-extend-the-existing-admin-panel-frontend-src-pages-adminpanel-tsx-with-a-new-section-tab-for-the-live-list-checker-that-supports-uploading-replacing-the-name-list-bulk-text-input-and-or-file-upload-viewing-all-claims-filtering-by-status-approving-rejecting-claims-setting-limits-and-per-claim-amount-viewing-totals-and-editing-contact-info-including-whatsapp-number",
+      "title": "Extend the existing Admin Panel (frontend/src/pages/AdminPanel.tsx) with a new section/tab for the Live List Checker that supports: uploading/replacing the name list (bulk text input and/or file upload), viewing all claims, filtering by status, approving/rejecting claims, setting limits and per-claim amount, viewing totals, and editing contact info including WhatsApp number.",
       "reqIds": [
         "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-improve-the-overall-ui-colors-graphics-with-a-coherent-visual-theme-applied-consistently-across-customer-view-upload-section-and-admin-panel-english-ui-text",
-      "title": "Improve the overall UI colors/graphics with a coherent visual theme applied consistently across Customer View, Upload Section, and Admin Panel (English UI text).",
+      "id": "feature-apply-a-coherent-visual-theme-for-the-new-live-list-checker-pages-sections-that-matches-the-existing-app-s-tailwind-shadcn-styling-but-is-distinct-and-consistent-e-g-warm-amber-charcoal-with-card-based-layout-clear-status-badges-and-accessible-form-states-do-not-use-a-blue-purple-primary-theme",
+      "title": "Apply a coherent visual theme for the new Live List Checker pages/sections that matches the existing app’s Tailwind/Shadcn styling but is distinct and consistent (e.g., ‘warm amber + charcoal’ with card-based layout, clear status badges, and accessible form states). Do not use a blue/purple primary theme.",
       "reqIds": [
-        "REQ-7"
+        "REQ-8"
       ],
       "version": 1
     }
@@ -72,48 +42,45 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Restore customer view section (match version 46)",
+      "summary": "Live list checker: admin uploads name list; users claim names with UPI ID; prevent duplicate claims; record claims and totals; admin reviews claims, sets limits, and manages contact info incl. WhatsApp via admin panel.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Restore upload section (match version 46)",
-      "reqIds": [],
+      "summary": "Implement backend data models and APIs for a live name-list checker: admin can upload/manage a list of names; users can claim a name; the system must prevent duplicate claims and track claim status (available/pending/approved/rejected) along with claimant identifier, timestamp, and UPI ID collected at claim time.",
+      "reqIds": [
+        "REQ-1"
+      ],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Remove authentication/pin for non-admin users; admin panel remains protected",
-      "reqIds": [],
+      "summary": "Add backend support for admin-configurable limits and totals: admin can set claim limits (e.g., maximum number of pending/approved claims overall and/or per user) and a per-claim rate/amount; backend must compute and expose totals based on claims (at minimum totals for approved claims, and optionally pending totals) and enforce limits during claim creation.",
+      "reqIds": [
+        "REQ-2"
+      ],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Admin can lock/unlock existing apps; when locked, users cannot generate comments until unlocked",
-      "reqIds": [],
+      "summary": "Add backend support for admin-managed public contact information, including a WhatsApp number, that can be updated in the admin panel and queried by the user view.",
+      "reqIds": [
+        "REQ-3"
+      ],
       "status": "pending"
     },
     {
-      "id": "AR-5",
-      "summary": "Admin panel: one-click download of all uploaded images",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-6",
-      "summary": "Improve site graphics/colors (UI visual polish)",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Improve website performance (site sometimes runs late/slow)",
-      "reqIds": [],
+      "id": "AR-8",
+      "summary": "Add required backend state upgrade handling for the new live list checker storage (name list, claims, settings/limits, contact info) using backend/migration.mo according to the project’s conditional migration policy, ensuring existing stored data (current comment lists, images, messages, etc.) is preserved.",
+      "reqIds": [
+        "REQ-7"
+      ],
       "status": "pending"
     }
   ],
-  "projectName": "Restore public Customer View + Upload Section, keep admin-only unlock, add app lock/unlock + bulk image download, and improve UI/performance",
+  "gameProjectType": "none",
+  "projectName": "Live List Checker",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

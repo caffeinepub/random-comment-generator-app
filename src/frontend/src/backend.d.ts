@@ -14,6 +14,7 @@ export class ExternalBlob {
     static fromBytes(blob: Uint8Array<ArrayBuffer>): ExternalBlob;
     withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
 }
+export type DeviceId = string;
 export type CommentId = string;
 export type Time = bigint;
 export interface Comment {
@@ -67,6 +68,40 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
+
+// Live List Checker Types - Exported
+export type NameListId = string;
+export type ClaimId = string;
+export type ClaimStatus = 'pending' | 'approved' | 'rejected';
+
+export interface ClaimRecord {
+    id: ClaimId;
+    name: string;
+    upiId: string;
+    claimant: Principal;
+    status: ClaimStatus;
+    timestamp: Time;
+}
+
+export interface LiveListSettings {
+    maxClaims: bigint;
+    perClaimAmount: bigint;
+}
+
+export interface LiveListTotals {
+    pendingCount: bigint;
+    approvedCount: bigint;
+    rejectedCount: bigint;
+    pendingTotalAmount: bigint;
+    approvedTotalAmount: bigint;
+}
+
+export interface ContactInfo {
+    whatsappNumber: string;
+    email: string;
+    additionalInfo: string;
+}
+
 export interface backendInterface {
     addComment(accessCode: string, listId: CommentListId, id: CommentId, content: string): Promise<void>;
     addFundsToWallet(accessCode: string, userPrincipal: Principal, amount: bigint): Promise<void>;
@@ -76,6 +111,7 @@ export interface backendInterface {
     deleteCommentList(accessCode: string, listId: CommentListId): Promise<void>;
     downloadAllRatingImages(accessCode: string): Promise<Array<RatingImageMetadata>>;
     generateBulkComments(bulkGeneratorKey: string, listId: CommentListId, count: bigint): Promise<Array<Comment>>;
+    generateSingleComment(listId: CommentListId, deviceId: DeviceId): Promise<string | null>;
     getAllBulkCommentTotals(accessCode: string): Promise<Array<[CommentListId, bigint]>>;
     getAllMessages(accessCode: string): Promise<Array<Message>>;
     getAllPaymentRecords(accessCode: string): Promise<Array<[Principal, Array<PaymentRecord>]>>;
@@ -87,6 +123,7 @@ export interface backendInterface {
     getCommentList(accessCode: string, listId: CommentListId): Promise<Array<Comment>>;
     getCommentListIds(): Promise<Array<CommentListId>>;
     getCommentListTotal(accessCode: string, listId: CommentListId): Promise<bigint>;
+    getDeviceSingleCommentHistory(deviceId: DeviceId): Promise<Array<[CommentListId, boolean]>>;
     getLockedCommentListIds(): Promise<Array<CommentListId>>;
     getLockedCommentListsTotal(accessCode: string): Promise<bigint>;
     getMessages(): Promise<Array<Message>>;
@@ -96,6 +133,7 @@ export interface backendInterface {
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     getUserRatingImageCount(accessCode: string, userName: string): Promise<bigint>;
     getWalletBalance(): Promise<bigint>;
+    hasSingleCommentGenerated(deviceId: DeviceId, listId: CommentListId): Promise<boolean>;
     isCallerAdmin(): Promise<boolean>;
     isCommentListLocked(listId: CommentListId): Promise<boolean>;
     lockCommentList(accessCode: string, listId: CommentListId): Promise<void>;
@@ -111,4 +149,19 @@ export interface backendInterface {
     unlockCommentList(accessCode: string, listId: CommentListId): Promise<void>;
     updatePaymentStatus(accessCode: string, userPrincipal: Principal, paymentId: string, newStatus: PaymentStatus): Promise<void>;
     uploadRatingImage(accessCode: string, userName: string, image: ExternalBlob): Promise<RatingImageId>;
+    
+    // Live List Checker Methods (to be implemented in backend)
+    uploadNameList(accessCode: string, names: Array<string>): Promise<void>;
+    getActiveNameList(): Promise<Array<string>>;
+    checkNameAvailability(name: string): Promise<boolean>;
+    createClaim(name: string, upiId: string): Promise<ClaimId>;
+    getClaimStatus(name: string): Promise<ClaimRecord | null>;
+    getAllClaims(accessCode: string): Promise<Array<ClaimRecord>>;
+    approveClaim(accessCode: string, claimId: ClaimId): Promise<void>;
+    rejectClaim(accessCode: string, claimId: ClaimId): Promise<void>;
+    getLiveListTotals(accessCode: string): Promise<LiveListTotals>;
+    setLiveListSettings(accessCode: string, settings: LiveListSettings): Promise<void>;
+    getLiveListSettings(accessCode: string): Promise<LiveListSettings>;
+    setContactInfo(accessCode: string, info: ContactInfo): Promise<void>;
+    getContactInfo(): Promise<ContactInfo>;
 }

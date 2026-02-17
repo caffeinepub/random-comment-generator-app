@@ -2,77 +2,10 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-restore-a-public-no-pin-no-authentication-end-user-experience-with-both-a-customer-view-section-and-an-upload-section-section-available-without-admin-unlock-matching-the-v46-structure-as-closely-as-possible",
-      "featureTitle": "Restore a public (no PIN/no authentication) end-user experience with both a Customer View section and an Upload Section section available without admin unlock, matching the v46 structure as closely as possible.",
+      "featureId": "feature-create-extend-frontend-react-query-hooks-in-the-existing-hooks-pattern-used-by-frontend-src-hooks-usequeries-ts-for-uploading-replacing-the-name-list-fetching-the-list-creating-a-claim-with-upi-id-fetching-claim-status-for-a-name-fetching-admin-claim-queues-approving-rejecting-claims-fetching-totals-and-getting-setting-contact-info-and-limits",
+      "featureTitle": "Create/extend frontend React Query hooks (in the existing hooks pattern used by frontend/src/hooks/useQueries.ts) for: uploading/replacing the name list, fetching the list, creating a claim with UPI ID, fetching claim status for a name, fetching admin claim queues, approving/rejecting claims, fetching totals, and getting/setting contact info and limits.",
       "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/pages/UploadSection.tsx",
-        "frontend/src/pages/UserView.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "blob-storage@4.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-the-app-shell-navigation-so-users-can-switch-between-customer-view-upload-section-and-admin-panel-only-admin-panel-must-be-protected-by-the-existing-admin-pin-unlock-flow",
-      "featureTitle": "Update the app shell/navigation so users can switch between Customer View, Upload Section, and Admin Panel; only Admin Panel must be protected by the existing admin PIN unlock flow.",
-      "files": [
-        "frontend/src/App.tsx",
-        "frontend/src/components/Header.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "blob-storage@4.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-implement-an-admin-controlled-lock-unlock-state-per-existing-app-treat-as-comment-list-ids-so-that-when-a-list-is-locked-end-users-cannot-generate-comments-from-that-list-until-it-is-unlocked",
-      "featureTitle": "Implement an admin-controlled lock/unlock state per existing “app” (treat as comment list IDs) so that when a list is locked, end users cannot generate comments from that list until it is unlocked.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/AdminPanel.tsx",
-        "frontend/src/pages/UserView.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "blob-storage@4.0.0",
-        "github-export-icp-cli@1.0.0"
-      ],
-      "testIds": [
-        "REQ-3"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-update-customer-view-and-upload-section-uis-to-reflect-locked-lists-indicate-lock-status-in-list-selection-ui-and-disable-guard-generate-actions-for-locked-lists-with-an-english-explanation",
-      "featureTitle": "Update Customer View and Upload Section UIs to reflect locked lists: indicate lock status in list selection UI and disable/guard generate actions for locked lists with an English explanation.",
-      "files": [
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/UploadSection.tsx",
-        "frontend/src/pages/UserView.tsx"
+        "frontend/src/hooks/useQueries.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -89,10 +22,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-an-admin-panel-action-to-download-all-uploaded-rating-images-in-one-click",
-      "featureTitle": "Add an Admin Panel action to download all uploaded rating images in one click.",
+      "featureId": "feature-add-a-user-facing-live-list-checker-ui-flow-that-allows-a-user-to-view-instructions-enter-a-name-see-availability-and-if-available-submit-a-claim-by-entering-their-upi-id-the-ui-must-show-clear-feedback-when-a-name-is-already-taken-and-show-the-user-the-status-of-their-submitted-claim-at-least-pending-approved-rejected",
+      "featureTitle": "Add a user-facing ‘Live List Checker’ UI flow that allows a user to: view instructions, enter a name, see availability, and if available submit a claim by entering their UPI ID; the UI must show clear feedback when a name is already taken and show the user the status of their submitted claim (at least pending/approved/rejected).",
       "files": [
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
+        "frontend/src/components/live-list-checker/statusStyles.ts",
+        "frontend/src/pages/UserView.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -109,13 +44,11 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-perceived-performance-and-fix-slowness-lag-in-the-ui-focusing-on-reducing-unnecessary-re-renders-and-expensive-visual-effects-while-keeping-the-interface-visually-appealing",
-      "featureTitle": "Improve perceived performance and fix slowness/lag in the UI, focusing on reducing unnecessary re-renders and expensive visual effects while keeping the interface visually appealing.",
+      "featureId": "feature-extend-the-existing-admin-panel-frontend-src-pages-adminpanel-tsx-with-a-new-section-tab-for-the-live-list-checker-that-supports-uploading-replacing-the-name-list-bulk-text-input-and-or-file-upload-viewing-all-claims-filtering-by-status-approving-rejecting-claims-setting-limits-and-per-claim-amount-viewing-totals-and-editing-contact-info-including-whatsapp-number",
+      "featureTitle": "Extend the existing Admin Panel (frontend/src/pages/AdminPanel.tsx) with a new section/tab for the Live List Checker that supports: uploading/replacing the name list (bulk text input and/or file upload), viewing all claims, filtering by status, approving/rejecting claims, setting limits and per-claim amount, viewing totals, and editing contact info including WhatsApp number.",
       "files": [
-        "frontend/src/components/AnimatedBackground.tsx",
-        "frontend/src/hooks/useQueries.ts",
-        "frontend/src/pages/UploadSection.tsx",
-        "frontend/src/pages/UserView.tsx"
+        "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
+        "frontend/src/pages/AdminPanel.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -132,14 +65,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-improve-the-overall-ui-colors-graphics-with-a-coherent-visual-theme-applied-consistently-across-customer-view-upload-section-and-admin-panel-english-ui-text",
-      "featureTitle": "Improve the overall UI colors/graphics with a coherent visual theme applied consistently across Customer View, Upload Section, and Admin Panel (English UI text).",
+      "featureId": "feature-apply-a-coherent-visual-theme-for-the-new-live-list-checker-pages-sections-that-matches-the-existing-app-s-tailwind-shadcn-styling-but-is-distinct-and-consistent-e-g-warm-amber-charcoal-with-card-based-layout-clear-status-badges-and-accessible-form-states-do-not-use-a-blue-purple-primary-theme",
+      "featureTitle": "Apply a coherent visual theme for the new Live List Checker pages/sections that matches the existing app’s Tailwind/Shadcn styling but is distinct and consistent (e.g., ‘warm amber + charcoal’ with card-based layout, clear status badges, and accessible form states). Do not use a blue/purple primary theme.",
       "files": [
-        "frontend/src/index.css",
-        "frontend/src/pages/AdminPanel.tsx",
-        "frontend/src/pages/UploadSection.tsx",
-        "frontend/src/pages/UserView.tsx",
-        "frontend/tailwind.config.js"
+        "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
+        "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
+        "frontend/src/index.css"
       ],
       "components": [
         "authorization@4.0.0",
@@ -151,7 +82,7 @@
         "github-export-icp-cli@1.0.0"
       ],
       "testIds": [
-        "REQ-7"
+        "REQ-8"
       ],
       "confidence": "high"
     }

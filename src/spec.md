@@ -1,15 +1,15 @@
 # Specification
 
 ## Summary
-**Goal:** Restore public access to Customer View and Upload Section (no PIN), keep Admin Panel PIN-protected, add admin-controlled list lock/unlock and one-click bulk download of uploaded rating images, and improve UI theme and performance.
+**Goal:** Add a Live List Checker feature where admins manage a name list, claims, limits/totals, and public contact info, and users can check/claim names with UPI ID and track claim status.
 
 **Planned changes:**
-- Restore the v46-like structure so Customer View and Upload Section are publicly accessible without any admin PIN/unlock.
-- Update app navigation so users can switch between Customer View, Upload Section, and Admin Panel, with only Admin Panel protected by the existing admin PIN flow.
-- Add a persistent lock/unlock flag per comment list ID, with Admin Panel controls to lock/unlock lists.
-- Update Customer View and Upload Section to show lock status and prevent generate/bulk-generate actions for locked lists with a clear English explanation.
-- Add an Admin Panel action to download all uploaded rating images in one click (single bulk download artifact/flow), with stable filenames (including userName + index/unique ID) and progress/success/failure feedback.
-- Reduce UI lag by minimizing unnecessary re-renders/refetch loops and toning down expensive visual effects while keeping the UI visually appealing.
-- Apply a cohesive, consistent visual theme (colors/graphics) across Customer View, Upload Section, and Admin Panel with improved readability (light/dark).
+- Add backend models and APIs to store/manage an admin-provided name list, create and track name claims (available/pending/approved/rejected), prevent duplicate claims, and record claimant identifier, timestamp, and UPI ID.
+- Add backend admin settings for claim limits and per-claim amount, enforce limits during claim creation, and expose computed totals derived from claims.
+- Add backend storage and APIs for admin-managed public contact info (including WhatsApp number) and ensure all new state survives upgrades via migration handling.
+- Extend frontend React Query hooks (following existing patterns) for all Live List Checker operations: list upload/fetch, claim creation/status lookup, admin claim queue + approve/reject, limits/totals, and contact info get/set.
+- Add a user-facing Live List Checker UI to enter a name, see availability, submit a claim with required UPI ID, view clear “taken” errors, and see claim status plus displayed contact info.
+- Extend the Admin Panel with a Live List Checker section to upload/replace the list, view/filter claims, approve/reject, set limits and per-claim amount, view totals, and edit contact info.
+- Apply a distinct but consistent Tailwind/Shadcn visual theme for this feature (not blue/purple), with clear status badges and accessible English messaging.
 
-**User-visible outcome:** Users can freely use Customer View and Upload Section without any PIN, while admins unlock only the Admin Panel to manage lists (including lock/unlock) and download all uploaded rating images in one click; the app feels faster and has a more consistent look.
+**User-visible outcome:** Users can check a name’s availability, submit a claim with their UPI ID, and track status; admins can manage the name list, review and approve/reject claims, configure limits and per-claim amount, view totals, and update public contact info (including WhatsApp number).

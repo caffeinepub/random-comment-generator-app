@@ -18,6 +18,7 @@ export interface Comment {
 }
 export type CommentId = string;
 export type CommentListId = string;
+export type DeviceId = string;
 export type ExternalBlob = Uint8Array;
 export interface Message {
   'id' : MessageId,
@@ -100,6 +101,10 @@ export interface _SERVICE {
     [string, CommentListId, bigint],
     Array<Comment>
   >,
+  'generateSingleComment' : ActorMethod<
+    [CommentListId, DeviceId],
+    [] | [string]
+  >,
   'getAllBulkCommentTotals' : ActorMethod<
     [string],
     Array<[CommentListId, bigint]>
@@ -120,6 +125,10 @@ export interface _SERVICE {
   'getCommentList' : ActorMethod<[string, CommentListId], Array<Comment>>,
   'getCommentListIds' : ActorMethod<[], Array<CommentListId>>,
   'getCommentListTotal' : ActorMethod<[string, CommentListId], bigint>,
+  'getDeviceSingleCommentHistory' : ActorMethod<
+    [DeviceId],
+    Array<[CommentListId, boolean]>
+  >,
   'getLockedCommentListIds' : ActorMethod<[], Array<CommentListId>>,
   'getLockedCommentListsTotal' : ActorMethod<[string], bigint>,
   'getMessages' : ActorMethod<[], Array<Message>>,
@@ -129,6 +138,7 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'getUserRatingImageCount' : ActorMethod<[string, string], bigint>,
   'getWalletBalance' : ActorMethod<[], bigint>,
+  'hasSingleCommentGenerated' : ActorMethod<[DeviceId, CommentListId], boolean>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'isCommentListLocked' : ActorMethod<[CommentListId], boolean>,
   'lockCommentList' : ActorMethod<[string, CommentListId], undefined>,

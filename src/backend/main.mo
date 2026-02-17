@@ -16,7 +16,6 @@ actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
-  // Types
   type CommentId = Text;
   type CommentListId = Text;
   type RatingImageId = Text;
@@ -117,6 +116,13 @@ actor {
   // User Comment History Storage (per device)
   public type DeviceId = Text;
   let userCommentHistory = Map.empty<
+    Principal.Principal,
+    Map.Map<DeviceId, Map.Map<CommentListId, Bool>>
+  >();
+
+  // Single Comment Generator History
+  // principal -> deviceId -> listId -> generated (true=exists)
+  let singleCommentHistory = Map.empty<
     Principal.Principal,
     Map.Map<DeviceId, Map.Map<CommentListId, Bool>>
   >();
@@ -485,6 +491,97 @@ actor {
     bulkGenLogs.add(logId, logEntry);
 
     selected;
+  };
+
+  // ================== New Single Comment Generation Functions =====================
+
+  public query ({ caller }) func hasSingleCommentGenerated(deviceId : DeviceId, listId : CommentListId) : async Bool {
+    switch (singleCommentHistory.get(caller)) {
+      case (null) { false };
+      case (?deviceMap) {
+        switch (deviceMap.get(deviceId)) {
+          case (null) { false };
+          case (?listMap) {
+            switch (listMap.get(listId)) {
+              case (null) { false };
+              case (?hasGenerated) { hasGenerated };
+            };
+          };
+        };
+      };
+    };
+  };
+
+  public query ({ caller }) func getDeviceSingleCommentHistory(deviceId : DeviceId) : async [(CommentListId, Bool)] {
+    switch (singleCommentHistory.get(caller)) {
+      case (null) { [] };
+      case (?deviceMap) {
+        switch (deviceMap.get(deviceId)) {
+          case (null) { [] };
+          case (?listMap) { listMap.toArray() };
+        };
+      };
+    };
+  };
+
+  public shared ({ caller }) func generateSingleComment(listId : CommentListId, deviceId : DeviceId) : async ?Text {
+    // Check if comment list is locked
+    if (await isCommentListLocked(listId)) {
+      return null; // Simply indicate generation failed due to lock
+    };
+
+    // Check if comment has already been generated for this deviceId/listId
+    if (await hasSingleCommentGenerated(deviceId, listId)) {
+      return null; // Already generated, return null to indicate not allowed
+    };
+
+    // Mark as generated for this deviceId/listId
+    let callerHistory = switch (singleCommentHistory.get(caller)) {
+      case (null) {
+        let newDeviceMap = Map.empty<DeviceId, Map.Map<CommentListId, Bool>>();
+        singleCommentHistory.add(caller, newDeviceMap);
+        newDeviceMap;
+      };
+      case (?existing) { existing };
+    };
+
+    let deviceHistory = switch (callerHistory.get(deviceId)) {
+      case (null) {
+        let newListMap = Map.empty<CommentListId, Bool>();
+        callerHistory.add(deviceId, newListMap);
+        newListMap;
+      };
+      case (?existingListMap) { existingListMap };
+    };
+
+    deviceHistory.add(listId, true);
+
+    let comments = switch (commentLists.get(listId)) {
+      case (null) { List.empty<Comment>() };
+      case (?comments) { comments };
+    };
+
+    let availableArray = comments.toArray().filter(func(c) { not c.used });
+    if (availableArray.size() == 0) { return null };
+    let numToGenerate = if (1 > availableArray.size()) { availableArray.size() } else { 1 };
+
+    let selected = availableArray.sliceToArray(0, numToGenerate);
+
+    let updatedComments = comments.map<Comment, Comment>(
+      func(comment) {
+        let isSelected = selected.any(func(c) { c.id == comment.id });
+        if (isSelected) { { comment with used = true } } else { comment };
+      }
+    );
+    commentLists.add(listId, updatedComments);
+
+    var firstComment = "";
+    for (comment in selected.values()) {
+      if (firstComment == "") {
+        firstComment := comment.content;
+      };
+    };
+    ?firstComment;
   };
 
   // ================== RV Rating Images System (Admin-Only) =====================

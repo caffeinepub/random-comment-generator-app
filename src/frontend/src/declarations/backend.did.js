@@ -43,6 +43,7 @@ export const Comment = IDL.Record({
   'used' : IDL.Bool,
   'timestamp' : Time,
 });
+export const DeviceId = IDL.Text;
 export const MessageId = IDL.Text;
 export const MessageSide = IDL.Variant({
   'admin' : IDL.Null,
@@ -122,6 +123,11 @@ export const idlService = IDL.Service({
       [IDL.Vec(Comment)],
       [],
     ),
+  'generateSingleComment' : IDL.Func(
+      [CommentListId, DeviceId],
+      [IDL.Opt(IDL.Text)],
+      [],
+    ),
   'getAllBulkCommentTotals' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(IDL.Tuple(CommentListId, IDL.Nat))],
@@ -161,6 +167,11 @@ export const idlService = IDL.Service({
       [IDL.Nat],
       ['query'],
     ),
+  'getDeviceSingleCommentHistory' : IDL.Func(
+      [DeviceId],
+      [IDL.Vec(IDL.Tuple(CommentListId, IDL.Bool))],
+      ['query'],
+    ),
   'getLockedCommentListIds' : IDL.Func([], [IDL.Vec(CommentListId)], ['query']),
   'getLockedCommentListsTotal' : IDL.Func([IDL.Text], [IDL.Nat], ['query']),
   'getMessages' : IDL.Func([], [IDL.Vec(Message)], ['query']),
@@ -174,6 +185,11 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getWalletBalance' : IDL.Func([], [IDL.Nat], ['query']),
+  'hasSingleCommentGenerated' : IDL.Func(
+      [DeviceId, CommentListId],
+      [IDL.Bool],
+      ['query'],
+    ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'isCommentListLocked' : IDL.Func([CommentListId], [IDL.Bool], ['query']),
   'lockCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
@@ -237,6 +253,7 @@ export const idlFactory = ({ IDL }) => {
     'used' : IDL.Bool,
     'timestamp' : Time,
   });
+  const DeviceId = IDL.Text;
   const MessageId = IDL.Text;
   const MessageSide = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
   const Message = IDL.Record({
@@ -313,6 +330,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(Comment)],
         [],
       ),
+    'generateSingleComment' : IDL.Func(
+        [CommentListId, DeviceId],
+        [IDL.Opt(IDL.Text)],
+        [],
+      ),
     'getAllBulkCommentTotals' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(IDL.Tuple(CommentListId, IDL.Nat))],
@@ -352,6 +374,11 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Nat],
         ['query'],
       ),
+    'getDeviceSingleCommentHistory' : IDL.Func(
+        [DeviceId],
+        [IDL.Vec(IDL.Tuple(CommentListId, IDL.Bool))],
+        ['query'],
+      ),
     'getLockedCommentListIds' : IDL.Func(
         [],
         [IDL.Vec(CommentListId)],
@@ -369,6 +396,11 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getWalletBalance' : IDL.Func([], [IDL.Nat], ['query']),
+    'hasSingleCommentGenerated' : IDL.Func(
+        [DeviceId, CommentListId],
+        [IDL.Bool],
+        ['query'],
+      ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'isCommentListLocked' : IDL.Func([CommentListId], [IDL.Bool], ['query']),
     'lockCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),

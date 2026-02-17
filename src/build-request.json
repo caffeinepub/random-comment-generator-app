@@ -1,148 +1,167 @@
 {
   "kind": "build_request",
-  "title": "Restore public Customer View + Upload Section, keep admin-only unlock, add app lock/unlock + bulk image download, and improve UI/performance",
+  "title": "Add live list checker with admin-managed name lists, claims, limits, totals, and contact info",
+  "projectName": "Live List Checker",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Restore a public (no PIN/no authentication) end-user experience with both a Customer View section and an Upload Section section available without admin unlock, matching the v46 structure as closely as possible.",
-      "target": "frontend",
+      "text": "Implement backend data models and APIs for a live name-list checker: admin can upload/manage a list of names; users can claim a name; the system must prevent duplicate claims and track claim status (available/pending/approved/rejected) along with claimant identifier, timestamp, and UPI ID collected at claim time.",
+      "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "But where is customer view section or upload section came it back and make same to same as in version 46 no need any pin code or authentication for others users except admin"
+          "Integrate a live list checker feature into my existing site. Admin uploads a name list. Users enter their name to claim; if available, it’s marked pending. At claim time, the user must enter their UPI ID. The system records the claimed names, the user’s UPI ID... If a name is already taken, notify the user. Admin reviews claims... via the admin panel."
         ]
       },
       "acceptanceCriteria": [
-        "When opening the app in a fresh session, users can access Customer View and Upload Section without being prompted for an admin PIN.",
-        "Admin PIN gating remains required only for the Admin Panel area.",
-        "Customer View page renders and functions (comment generation, history, bulk generation prompt) without admin unlock.",
-        "Upload Section page renders and functions (upload comment, bulk generator prompt, upload rating image) without admin unlock."
+        "Admin can upload/replace a name list in the backend and fetch it back for display.",
+        "A user claim attempt for an available name creates a claim record with status=PENDING and stores the provided UPI ID.",
+        "A user claim attempt for a name that is already pending/approved results in a backend error (or an explicit ‘taken’ response) that the frontend can show to the user.",
+        "Backend exposes queries to fetch claim records for admin review, including name, status, UPI ID, timestamp, and claimant principal (or other stable identifier)."
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Update the app shell/navigation so users can switch between Customer View, Upload Section, and Admin Panel; only Admin Panel must be protected by the existing admin PIN unlock flow.",
-      "target": "frontend",
+      "text": "Add backend support for admin-configurable limits and totals: admin can set claim limits (e.g., maximum number of pending/approved claims overall and/or per user) and a per-claim rate/amount; backend must compute and expose totals based on claims (at minimum totals for approved claims, and optionally pending totals) and enforce limits during claim creation.",
+      "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "no need any pin code or authentication for others users except admin"
+          "Admin reviews claims, sets limits... calculates a total based on claims."
         ]
       },
       "acceptanceCriteria": [
-        "There is a clear navigation control (tabs, header links, or similar) to access Customer View, Upload Section, and Admin Panel.",
-        "Attempting to open Admin Panel while not unlocked shows the admin PIN dialog/lock screen.",
-        "Customer View and Upload Section never show the admin PIN dialog."
+        "Admin can set and read back limit settings and per-claim amount settings.",
+        "When limits are reached, creating a new claim is rejected with a clear error message.",
+        "Backend exposes a totals query that returns computed totals (e.g., approvedCount, pendingCount, approvedTotalAmount, pendingTotalAmount) derived from stored claims and current settings."
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Implement an admin-controlled lock/unlock state per existing “app” (treat as comment list IDs) so that when a list is locked, end users cannot generate comments from that list until it is unlocked.",
-      "target": "both",
+      "text": "Add backend support for admin-managed public contact information, including a WhatsApp number, that can be updated in the admin panel and queried by the user view.",
+      "target": "backend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Lock the existing app means when admin lock any app from admin section user can't able to generate comments through it until admin unlock it"
+          "...updates contact info (including a WhatsApp number) via the admin panel."
         ]
       },
       "acceptanceCriteria": [
-        "Backend stores a locked/unlocked flag per comment list ID and persists it across reloads.",
-        "Admin Panel includes controls to lock/unlock each list.",
-        "When a list is locked, Customer View comment generation for that list is blocked and returns a clear error message.",
-        "When a list is unlocked, normal comment generation resumes."
+        "Admin can set contact info fields including WhatsApp number.",
+        "User-facing query returns the current contact info.",
+        "Contact info persists across canister upgrades (state is stable)."
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Update Customer View and Upload Section UIs to reflect locked lists: indicate lock status in list selection UI and disable/guard generate actions for locked lists with an English explanation.",
+      "text": "Create/extend frontend React Query hooks (in the existing hooks pattern used by frontend/src/hooks/useQueries.ts) for: uploading/replacing the name list, fetching the list, creating a claim with UPI ID, fetching claim status for a name, fetching admin claim queues, approving/rejecting claims, fetching totals, and getting/setting contact info and limits.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "user can't able to generate comments through it until admin unlock it"
+          "Build it"
         ]
       },
       "acceptanceCriteria": [
-        "Locked lists are visibly labeled (e.g., 'Locked') in the list selector and/or near the action buttons.",
-        "Generate Comment and Bulk Generate actions cannot be executed for locked lists; the UI shows an English message explaining the list is locked by the admin.",
-        "Unlocked lists behave as before."
+        "All new backend methods needed by the UI have corresponding React Query hooks (queries/mutations) with cache invalidation similar to existing patterns (e.g., invalidating list/totals on mutation).",
+        "Errors such as ‘name already taken’ are surfaced to the UI via toast or inline messaging (English text)."
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Add an Admin Panel action to download all uploaded rating images in one click.",
-      "target": "both",
+      "text": "Add a user-facing ‘Live List Checker’ UI flow that allows a user to: view instructions, enter a name, see availability, and if available submit a claim by entering their UPI ID; the UI must show clear feedback when a name is already taken and show the user the status of their submitted claim (at least pending/approved/rejected).",
+      "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Also download the uploaded images in one click through the admin panel",
-          "make easy to download all the images in one click only"
+          "Users enter their name to claim; if available, it’s marked pending. At claim time, the user must enter their UPI ID... If a name is already taken, notify the user."
         ]
       },
       "acceptanceCriteria": [
-        "Admin Panel provides a single button/action labeled in English to download all uploaded images.",
-        "Clicking the action results in a single download artifact for the admin (e.g., a ZIP) or a single action that triggers a complete bulk download flow without requiring per-image clicks.",
-        "The download includes all stored uploaded rating images with stable filenames that include at least the associated userName and an index or unique ID.",
-        "The action provides loading/progress feedback and a success/failure toast/message."
+        "User can enter a name and submit a claim with a required UPI ID field.",
+        "If the name is already claimed, the UI shows an English message indicating it is already taken and does not create a new claim.",
+        "After submitting, the UI shows claim status as ‘Pending’ (and updates to ‘Approved’/‘Rejected’ after admin action).",
+        "User can see current contact info (including WhatsApp number) in the Live List Checker user view."
       ]
     },
     {
       "id": "REQ-6",
-      "text": "Improve perceived performance and fix slowness/lag in the UI, focusing on reducing unnecessary re-renders and expensive visual effects while keeping the interface visually appealing.",
+      "text": "Extend the existing Admin Panel (frontend/src/pages/AdminPanel.tsx) with a new section/tab for the Live List Checker that supports: uploading/replacing the name list (bulk text input and/or file upload), viewing all claims, filtering by status, approving/rejecting claims, setting limits and per-claim amount, viewing totals, and editing contact info including WhatsApp number.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Sometimes website runs late"
+          "Admin uploads a name list... Admin reviews claims, sets limits, and updates contact info (including a WhatsApp number) via the admin panel."
         ]
       },
       "acceptanceCriteria": [
-        "Customer View and Upload Section initial render completes without long blocking spinners under normal conditions.",
-        "Animations/background effects do not noticeably degrade responsiveness on typical devices (e.g., scrolling, opening dialogs, switching tabs).",
-        "React Query usage avoids redundant refetch loops and heavy work on every render for the main pages."
+        "Admin can paste/upload a list of names and submit it; the list becomes active immediately for user checks.",
+        "Admin can see a table/list of claims with name, UPI ID, status, and timestamp.",
+        "Admin can approve or reject a claim; the claim status updates in the UI after action.",
+        "Admin can set limits and per-claim amount, and see totals computed from claims.",
+        "Admin can edit and save contact info including WhatsApp number."
       ]
     },
     {
       "id": "REQ-7",
-      "text": "Improve the overall UI colors/graphics with a coherent visual theme applied consistently across Customer View, Upload Section, and Admin Panel (English UI text).",
+      "text": "Add required backend state upgrade handling for the new live list checker storage (name list, claims, settings/limits, contact info) using backend/migration.mo according to the project’s conditional migration policy, ensuring existing stored data (current comment lists, images, messages, etc.) is preserved.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-1"
+        ],
+        "quotes": [
+          "Build it"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Upgrading the canister does not erase existing unrelated state.",
+        "New live list checker state is initialized safely on upgrade if missing.",
+        "The canister compiles and deploys with stable upgrade paths."
+      ]
+    },
+    {
+      "id": "REQ-8",
+      "text": "Apply a coherent visual theme for the new Live List Checker pages/sections that matches the existing app’s Tailwind/Shadcn styling but is distinct and consistent (e.g., ‘warm amber + charcoal’ with card-based layout, clear status badges, and accessible form states). Do not use a blue/purple primary theme.",
       "target": "frontend",
       "source": {
         "messageIds": [
           "msg-1"
         ],
         "quotes": [
-          "Improve the graphics or colours also on it"
+          "Build it"
         ]
       },
       "acceptanceCriteria": [
-        "A single cohesive theme (colors, gradients, shadows, typography, spacing) is applied across all major pages.",
-        "Contrast and readability are improved in both light and dark modes.",
-        "Visual polish updates do not remove required functionality."
+        "Live List Checker UI uses consistent typography, spacing, and components (cards, badges, inputs, dialogs) aligned with the existing design system.",
+        "Status (Available/Pending/Approved/Rejected/Taken) is clearly distinguishable using consistent badge colors and text labels.",
+        "All user-facing text is English."
       ]
     }
   ],
   "constraints": [
-    "Backend must remain a single Motoko actor in backend/main.mo; only add backend/migration.mo changes if existing stable state requires migration.",
-    "Do not edit files under frontend/src/components/ui or any paths listed as immutable in SYSTEM_CONTEXT.",
-    "Use English for all user-facing text."
+    "Keep all Motoko logic in the single backend actor (backend/main.mo).",
+    "Only generate/modify backend/migration.mo if needed for stable state upgrade of new storage.",
+    "Do not edit frontend files under immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
+    "No external databases or third-party authentication providers; use the existing Internet Identity integration and existing admin PIN/access-code gating patterns."
   ],
   "nonGoals": [
-    "Adding third-party authentication providers or any login flow for non-admin users.",
-    "Introducing external databases or non-Internet-Computer backend services.",
-    "Building real-time features (WebSockets/chat real-time updates beyond existing polling/query refresh patterns)."
+    "Implementing real WhatsApp messaging/notifications or any direct WhatsApp API integration (only store and display a WhatsApp contact number).",
+    "Real-time updates via WebSockets or push notifications.",
+    "Integrating external payment gateways or on-chain wallet features beyond computing totals from claims."
   ],
   "imageRequirements": {
     "required": [],

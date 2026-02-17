@@ -1,210 +1,101 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Public Customer/Upload access with admin-only PIN panel, list lock controls, bulk image download, and UI/performance polish",
+  "title": "Live List Checker (frontend): hooks + user flow + admin panel section + amber/charcoal theme",
   "requirements": [
     {
-      "id": "REQ-1",
-      "summary": "Restore public Customer View and Upload Section access without admin PIN, keeping PIN only for Admin Panel.",
-      "acceptanceCriteria": [
-        "When opening the app in a fresh session, users can access Customer View and Upload Section without being prompted for an admin PIN.",
-        "Admin PIN gating remains required only for the Admin Panel area.",
-        "Customer View page renders and functions (comment generation, history, bulk generation prompt) without admin unlock.",
-        "Upload Section page renders and functions (upload comment, bulk generator prompt, upload rating image) without admin unlock."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Refactor the app entry so the default experience is public (Customer View + Upload Section available immediately) and only the Admin Panel route/section triggers the existing AdminPinDialog flow; preserve the existing sessionStorage-based adminUnlocked state. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UserView.tsx",
-          "operation": "modify",
-          "description": "Ensure Customer View remains fully usable without any admin unlock assumptions (no dependency on admin-only data/hooks); keep bulk generator prompt via AccessKeyDialog. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UploadSection.tsx",
-          "operation": "modify",
-          "description": "Ensure Upload Section remains fully usable without any admin unlock assumptions; remove/avoid any admin-only UI elements that imply admin access is required for end users. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "summary": "Add navigation to switch between Customer View, Upload Section, and Admin Panel, with Admin Panel protected by the existing admin PIN unlock flow.",
-      "acceptanceCriteria": [
-        "There is a clear navigation control (tabs, header links, or similar) to access Customer View, Upload Section, and Admin Panel.",
-        "Attempting to open Admin Panel while not unlocked shows the admin PIN dialog/lock screen.",
-        "Customer View and Upload Section never show the admin PIN dialog."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/App.tsx",
-          "operation": "modify",
-          "description": "Implement a simple app-shell navigation (e.g., tabs/segmented control) switching among Customer View, Upload Section, and Admin Panel; when Admin Panel is selected and adminUnlocked is false, show AdminPinDialog instead of the panel. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/Header.tsx",
-          "operation": "modify",
-          "description": "Update the header to work in public mode: show app-level navigation context and an admin lock/unlock indicator (e.g., 'Admin Locked'/'Admin Unlocked') with a lock action that clears the admin session state; ensure English-only labels. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/AdminPinDialog.tsx",
-          "operation": "modify",
-          "description": "Confirm the PIN dialog can be invoked on-demand from the public shell (not only on initial load) and that cancel returns the user to public sections without blocking. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "summary": "Expose admin lock/unlock controls for comment lists and enforce lock status in the public experience using existing backend capabilities.",
-      "acceptanceCriteria": [
-        "Backend stores a locked/unlocked flag per comment list ID and persists it across reloads.",
-        "Admin Panel includes controls to lock/unlock each list.",
-        "When a list is locked, Customer View comment generation for that list is blocked and returns a clear error message.",
-        "When a list is unlocked, normal comment generation resumes."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add React Query hooks for existing backend capabilities related to locking: fetching locked list IDs (and/or per-list lock state) and admin mutations to lock/unlock a list; ensure cache invalidation updates list selectors and any dependent UI. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/AdminPanel.tsx",
-          "operation": "modify",
-          "description": "Add list-level lock/unlock controls (admin-only) alongside existing list management UI; show current lock state per list and allow toggling with clear English confirmation/toasts. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UserView.tsx",
-          "operation": "modify",
-          "description": "Before attempting comment generation/bulk generation, check lock state (via the new hooks) and block requests for locked lists with a clear English toast/message; ensure behavior updates immediately when admin toggles lock. Verify the component's usage instructions before implementing."
-        }
-      ]
-    },
-    {
       "id": "REQ-4",
-      "summary": "Visually label locked lists and disable/guard generate actions in Customer View and Upload Section with an English explanation.",
+      "summary": "Add React Query hooks for Live List Checker admin and user operations (list, claims, approvals, totals, limits, contact info) aligned with existing hooks pattern.",
       "acceptanceCriteria": [
-        "Locked lists are visibly labeled (e.g., 'Locked') in the list selector and/or near the action buttons.",
-        "Generate Comment and Bulk Generate actions cannot be executed for locked lists; the UI shows an English message explaining the list is locked by the admin.",
-        "Unlocked lists behave as before."
+        "All new backend methods needed by the UI have corresponding React Query hooks (queries/mutations) with cache invalidation similar to existing patterns (e.g., invalidating list/totals on mutation).",
+        "Errors such as ‘name already taken’ are surfaced to the UI via toast or inline messaging (English text)."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/pages/UserView.tsx",
+          "path": "frontend/src/backend.d.ts",
           "operation": "modify",
-          "description": "Enhance the list selector UI to display lock status (e.g., a 'Locked' badge text next to list ID) and disable/guard 'Generate Comment' + bulk generation actions when locked, showing an English explanation near the buttons and via toast. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UploadSection.tsx",
-          "operation": "modify",
-          "description": "Update the bulk generator prompt area to reflect lock status for the selected list and prevent bulk generation when locked with an English explanation; keep upload comment/image flows available as before. Verify the component's usage instructions before implementing."
+          "description": "Extend the typed backend interface with Live List Checker methods and types (name list, claim record/status, totals, limits/settings, contact info) so the new hooks/UI compile against the actor. (No backend implementation here; just frontend typing.)"
         },
         {
           "path": "frontend/src/hooks/useQueries.ts",
           "operation": "modify",
-          "description": "Provide a lightweight, cache-friendly way for Customer View/Upload Section to consume lock state (e.g., locked IDs query derived into a Set) to avoid expensive recomputation on every render. Verify the component's usage instructions before implementing."
+          "description": "Add Live List Checker React Query hooks (queries/mutations) for: upload/replace name list (admin), fetch active list, create claim with required UPI ID, fetch claim status for a name, fetch admin claim queue(s) with filtering, approve/reject claims, fetch totals, and get/set limits + contact info. Follow existing patterns: useActor dependency gating, toast error/success, and invalidate relevant query keys after mutations."
         }
       ]
     },
     {
       "id": "REQ-5",
-      "summary": "Add a one-click Admin Panel bulk download for all uploaded rating images with progress and stable filenames.",
+      "summary": "Implement user-facing Live List Checker flow (instructions, name availability, claim with UPI ID, status display, contact info display) within the existing customer view.",
       "acceptanceCriteria": [
-        "Admin Panel provides a single button/action labeled in English to download all uploaded images.",
-        "Clicking the action results in a single download artifact for the admin (e.g., a ZIP) or a single action that triggers a complete bulk download flow without requiring per-image clicks.",
-        "The download includes all stored uploaded rating images with stable filenames that include at least the associated userName and an index or unique ID.",
-        "The action provides loading/progress feedback and a success/failure toast/message."
+        "User can enter a name and submit a claim with a required UPI ID field.",
+        "If the name is already claimed, the UI shows an English message indicating it is already taken and does not create a new claim.",
+        "After submitting, the UI shows claim status as ‘Pending’ (and updates to ‘Approved’/‘Rejected’ after admin action).",
+        "User can see current contact info (including WhatsApp number) in the Live List Checker user view."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/UserView.tsx",
           "operation": "modify",
-          "description": "Add an admin-only React Query mutation for bulk download that calls the existing backend capability returning all rating image metadata and blobs; surface progress/loading state to the UI. Verify the component's usage instructions before implementing."
+          "description": "Wire the Live List Checker into the existing customer view (e.g., as an additional sub-tab/section) without introducing a new top-level route. Include instructions, name input, availability/status display, and claim submission requiring UPI ID. Use the new Live List Checker hooks and show English inline/toast errors for taken/limit/auth failures. If authentication is required by backend, prompt user to log in before allowing claim submission (use existing Internet Identity integration; do not modify immutable auth hook files)."
         },
         {
-          "path": "frontend/src/components/AdminUserImageTable.tsx",
-          "operation": "modify",
-          "description": "Add a single 'Download All Images' action that fetches all images, builds a single ZIP client-side, and triggers one download; filenames must include userName and an index or unique ID; show progress (e.g., 'Downloading 12/200') and success/failure toasts. Use the blob-storage component's ExternalBlob capabilities (getBytes / getDirectURL as appropriate) to retrieve image bytes; verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/package.json",
-          "operation": "modify",
-          "description": "Add a small ZIP creation dependency (or equivalent) used only in the admin bulk download flow to generate a single downloadable artifact without per-image clicks. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/utils/bulkImageDownload.ts",
+          "path": "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
           "operation": "create",
-          "description": "Implement a reusable helper to transform a list of rating image metadata into a single ZIP blob with stable filenames and optional progress callbacks; used by AdminUserImageTable. Use the blob-storage component's ExternalBlob getBytes to obtain bytes; verify the component's usage instructions before implementing."
+          "description": "Create a dedicated user section component that renders the Live List Checker UI: instructions, name lookup, status badges (Available/Pending/Approved/Rejected/Taken), UPI ID input shown/required when claiming, and a contact info card including WhatsApp number. Use shadcn/ui building blocks already present (Card, Input, Button, Badge, etc.). Verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/components/live-list-checker/statusStyles.ts",
+          "operation": "create",
+          "description": "Add a small shared mapping/utility for consistent status label text + badge classnames (amber/charcoal palette) used by both user and admin Live List Checker UIs."
         }
       ]
     },
     {
       "id": "REQ-6",
-      "summary": "Reduce UI lag by minimizing re-renders, tuning React Query refetching, and simplifying expensive visual effects.",
+      "summary": "Extend Admin Panel with a Live List Checker tab for managing name lists, claims review/actions, limits/amounts, totals, and contact info.",
       "acceptanceCriteria": [
-        "Customer View and Upload Section initial render completes without long blocking spinners under normal conditions.",
-        "Animations/background effects do not noticeably degrade responsiveness on typical devices (e.g., scrolling, opening dialogs, switching tabs).",
-        "React Query usage avoids redundant refetch loops and heavy work on every render for the main pages."
+        "Admin can paste/upload a list of names and submit it; the list becomes active immediately for user checks.",
+        "Admin can see a table/list of claims with name, UPI ID, status, and timestamp.",
+        "Admin can approve or reject a claim; the claim status updates in the UI after action.",
+        "Admin can set limits and per-claim amount, and see totals computed from claims.",
+        "Admin can edit and save contact info including WhatsApp number."
       ],
       "file_operations": [
         {
-          "path": "frontend/src/hooks/useQueries.ts",
+          "path": "frontend/src/pages/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Tune React Query settings for public pages (e.g., longer staleTime, less aggressive refetchInterval where safe, and avoid unnecessary invalidations) to reduce background churn while keeping data reasonably fresh. Verify the component's usage instructions before implementing."
+          "description": "Add a new Admin Panel tab/section for Live List Checker and wire it into the existing shadcn Tabs layout. Keep existing admin PIN gating behavior intact. The new section should support: bulk paste and/or file upload for names, claim queue table with status filter, approve/reject actions, limits/per-claim amount form, totals display, and contact info editor (WhatsApp number included). Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/components/AnimatedBackground.tsx",
-          "operation": "modify",
-          "description": "Reduce canvas workload (fewer particles/elements, throttle requestAnimationFrame, pause when tab is hidden, respect prefers-reduced-motion, and avoid heavy blending/shadows) to improve responsiveness while keeping visual appeal. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UserView.tsx",
-          "operation": "modify",
-          "description": "Reduce avoidable re-renders by memoizing derived values (e.g., computed flags/sets) and keeping event handlers stable where beneficial; ensure no extra heavy work runs on every keystroke/open. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UploadSection.tsx",
-          "operation": "modify",
-          "description": "Reduce avoidable re-renders (memoize derived values and avoid recreating large arrays/strings in render) and ensure upload preview/progress updates remain smooth. Verify the component's usage instructions before implementing."
+          "path": "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
+          "operation": "create",
+          "description": "Create an admin-focused component used by AdminPanel that provides: name list upload/replace (textarea and optional file parse), claims table (name, UPI ID, status, timestamp) with filtering, approve/reject controls, limits + per-claim amount editor, totals cards, and contact info editor (WhatsApp number). Use the new hooks and invalidate/refetch after mutations. Use shadcn/ui components already in the project (Table if available, otherwise Cards + ScrollArea + rows). Verify the component's usage instructions before implementing."
         }
       ]
     },
     {
-      "id": "REQ-7",
-      "summary": "Apply a cohesive, consistent visual theme across Customer View, Upload Section, and Admin Panel with improved readability in light/dark modes.",
+      "id": "REQ-8",
+      "summary": "Apply a distinct warm amber + charcoal theme for Live List Checker UI with consistent cards/badges and accessible form states (no blue/purple primary).",
       "acceptanceCriteria": [
-        "A single cohesive theme (colors, gradients, shadows, typography, spacing) is applied across all major pages.",
-        "Contrast and readability are improved in both light and dark modes.",
-        "Visual polish updates do not remove required functionality."
+        "Live List Checker UI uses consistent typography, spacing, and components (cards, badges, inputs, dialogs) aligned with the existing design system.",
+        "Status (Available/Pending/Approved/Rejected/Taken) is clearly distinguishable using consistent badge colors and text labels.",
+        "All user-facing text is English."
       ],
       "file_operations": [
         {
           "path": "frontend/src/index.css",
           "operation": "modify",
-          "description": "Refine global theme tokens/utilities (gradients, card glow, focus states, and typographic rhythm) to ensure consistent styling across all major pages in both light/dark modes; keep all user-facing text in English. Verify the component's usage instructions before implementing."
+          "description": "Add Live List Checker-specific utility classes (scoped, non-global-primary) to support a warm amber + charcoal look (card borders/background accents, button variants if needed, and status badge colors). Ensure Live List Checker components use these utilities instead of the existing purple/blue gradient utilities for their primary actions."
         },
         {
-          "path": "frontend/tailwind.config.js",
+          "path": "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
           "operation": "modify",
-          "description": "Adjust Tailwind theme extensions (colors/shadows/animations) to align with the updated cohesive theme and reduce overly expensive animation defaults where applicable. Verify the component's usage instructions before implementing."
+          "description": "Ensure the user Live List Checker section consistently uses the amber/charcoal styling utilities and clearly distinguishes statuses with consistent badge colors/labels. Verify the component's usage instructions before implementing."
         },
         {
-          "path": "frontend/src/pages/AdminPanel.tsx",
+          "path": "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
           "operation": "modify",
-          "description": "Ensure Admin Panel sections (comments/images/chat/settings) align visually with public pages (spacing, card treatments, button variants, and consistent headings) without changing required functionality. Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UserView.tsx",
-          "operation": "modify",
-          "description": "Align Customer View visuals with the updated theme (consistent cards, labels, selectors, and messaging for states like locked/already-generated). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/pages/UploadSection.tsx",
-          "operation": "modify",
-          "description": "Align Upload Section visuals with the updated theme (consistent cards, helper notes, and upload previews) and ensure English-only UI text. Verify the component's usage instructions before implementing."
+          "description": "Ensure the admin Live List Checker section consistently uses the amber/charcoal styling utilities and clearly distinguishes statuses with consistent badge colors/labels. Verify the component's usage instructions before implementing."
         }
       ]
     }
