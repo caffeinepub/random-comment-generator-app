@@ -4,16 +4,18 @@ import Footer from './components/Footer';
 import AdminPanel from './pages/AdminPanel';
 import UserView from './pages/UserView';
 import UploadSection from './pages/UploadSection';
+import LiveListChecker from './pages/LiveListChecker';
 import AnimatedBackground from './components/AnimatedBackground';
 import AdminPinDialog from './components/AdminPinDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, Upload as UploadIcon, Shield } from 'lucide-react';
+import { MessageSquare, Upload as UploadIcon, Shield, CheckSquare } from 'lucide-react';
 import { useMidnightCommentListClear } from './hooks/useMidnightCommentListClear';
+import { useMusicPlayer } from './hooks/useMusicPlayer';
 
-type AppView = 'customer' | 'upload' | 'admin';
+type AppView = 'customer' | 'upload' | 'liveList' | 'admin';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<AppView>('customer');
@@ -27,6 +29,14 @@ function AppContent() {
   });
 
   useMidnightCommentListClear(isAdminUnlocked);
+  
+  // Initialize music player at app level
+  const { attemptAutoPlay } = useMusicPlayer();
+
+  useEffect(() => {
+    // Attempt autoplay when app mounts
+    attemptAutoPlay();
+  }, [attemptAutoPlay]);
 
   const handleViewChange = (view: AppView) => {
     if (view === 'admin' && !isAdminUnlocked) {
@@ -65,30 +75,37 @@ function AppContent() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-[oklch(var(--gradient-start)/0.05)] relative overflow-hidden">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-orange-50 dark:from-blue-950 dark:via-teal-950 dark:to-orange-950 relative overflow-hidden">
       <AnimatedBackground />
       <Header onLogout={handleLogout} isAdminUnlocked={isAdminUnlocked} />
       
       <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
         <Tabs value={currentView} onValueChange={(v) => handleViewChange(v as AppView)} className="w-full">
-          <TabsList className="grid w-full max-w-2xl mx-auto grid-cols-3 h-16 rounded-2xl p-1.5 bg-accent/50 mb-8">
+          <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-4 h-16 rounded-3xl p-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm mb-8 shadow-lg border-2 border-blue-200/50 dark:border-blue-800/50">
             <TabsTrigger 
               value="customer" 
-              className="text-base font-bold rounded-xl data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300 h-full"
+              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
             >
-              <Users className="w-5 h-5 mr-2" />
+              <MessageSquare className="w-5 h-5 mr-2" />
               Customer View
             </TabsTrigger>
             <TabsTrigger 
               value="upload" 
-              className="text-base font-bold rounded-xl data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300 h-full"
+              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
             >
               <UploadIcon className="w-5 h-5 mr-2" />
               Upload Section
             </TabsTrigger>
             <TabsTrigger 
+              value="liveList" 
+              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
+            >
+              <CheckSquare className="w-5 h-5 mr-2" />
+              Live List Checker
+            </TabsTrigger>
+            <TabsTrigger 
               value="admin" 
-              className="text-base font-bold rounded-xl data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300 h-full"
+              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
             >
               <Shield className="w-5 h-5 mr-2" />
               Admin Panel
@@ -103,16 +120,20 @@ function AppContent() {
             <UploadSection />
           </TabsContent>
 
+          <TabsContent value="liveList" className="mt-0">
+            <LiveListChecker />
+          </TabsContent>
+
           <TabsContent value="admin" className="mt-0">
             {isAdminUnlocked ? (
               <AdminPanel />
             ) : (
               <div className="flex items-center justify-center py-20">
                 <div className="text-center space-y-6">
-                  <div className="w-24 h-24 rounded-3xl gradient-bg-diagonal flex items-center justify-center shadow-2xl mx-auto animate-pulse-glow">
+                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-2xl mx-auto animate-pulse">
                     <Shield className="w-12 h-12 text-white" />
                   </div>
-                  <h2 className="text-3xl font-extrabold gradient-text">Admin Access Required</h2>
+                  <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">Admin Access Required</h2>
                   <p className="text-muted-foreground text-lg max-w-md mx-auto">
                     Please unlock the admin panel to continue
                   </p>

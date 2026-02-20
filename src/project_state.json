@@ -1,40 +1,85 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Integrate a live list checker feature into an existing site: admin uploads a name list; users claim available names with UPI ID; system tracks pending/claimed names, records UPI IDs, calculates totals, enforces admin-set limits, notifies on taken names, and allows admin to manage claims and contact info (including WhatsApp number) via an admin panel.",
-  "architectural_notes": [],
+  "summary": "App Review & Comment Management website with enhanced admin controls, music system, and interactive shooter game",
+  "architectural_notes": [
+    "Local storage used for client-side caching with backend synchronization",
+    "Music files stored and served from backend for all users",
+    "Export functionality generates both CSV and JSON formats in single click",
+    "Browser autoplay policies handled for background music"
+  ],
   "known_issues": [],
   "isFixRequest": false,
   "existing_features": [
     {
-      "id": "feature-create-extend-frontend-react-query-hooks-in-the-existing-hooks-pattern-used-by-frontend-src-hooks-usequeries-ts-for-uploading-replacing-the-name-list-fetching-the-list-creating-a-claim-with-upi-id-fetching-claim-status-for-a-name-fetching-admin-claim-queues-approving-rejecting-claims-fetching-totals-and-getting-setting-contact-info-and-limits",
-      "title": "Create/extend frontend React Query hooks (in the existing hooks pattern used by frontend/src/hooks/useQueries.ts) for: uploading/replacing the name list, fetching the list, creating a claim with UPI ID, fetching claim status for a name, fetching admin claim queues, approving/rejecting claims, fetching totals, and getting/setting contact info and limits.",
+      "id": "feature-add-delete-buttons-for-individual-comments-in-the-admin-panel-comment-list-management-section-each-comment-row-should-have-a-delete-icon-button-that-removes-that-specific-comment-from-the-backend-and-updates-the-ui",
+      "title": "Add delete buttons for individual comments in the Admin Panel comment list management section. Each comment row should have a delete icon/button that removes that specific comment from the backend and updates the UI.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-delete-buttons-for-individual-usernames-in-the-admin-live-list-panel-each-username-entry-should-have-a-delete-icon-button-that-removes-it-from-the-specific-app-event-list",
+      "title": "Add delete buttons for individual usernames in the Admin Live List Panel. Each username entry should have a delete icon/button that removes it from the specific app/event list.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-a-clear-all-button-to-the-admin-panel-that-removes-all-comments-app-events-and-usernames-from-the-system-this-should-be-a-prominent-action-button-with-strong-confirmation",
+      "title": "Add a Clear All button to the Admin Panel that removes all comments, app events, and usernames from the system. This should be a prominent action button with strong confirmation.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-one-click-download-feature-in-admin-panel-that-exports-all-data-comments-app-events-usernames-in-both-csv-and-json-formats-the-download-should-bundle-all-data-types-into-separate-files-within-a-single-download-action",
+      "title": "Implement one-click download feature in Admin Panel that exports all data (comments, app events, usernames) in both CSV and JSON formats. The download should bundle all data types into separate files within a single download action.",
       "reqIds": [
         "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-user-facing-live-list-checker-ui-flow-that-allows-a-user-to-view-instructions-enter-a-name-see-availability-and-if-available-submit-a-claim-by-entering-their-upi-id-the-ui-must-show-clear-feedback-when-a-name-is-already-taken-and-show-the-user-the-status-of-their-submitted-claim-at-least-pending-approved-rejected",
-      "title": "Add a user-facing ‘Live List Checker’ UI flow that allows a user to: view instructions, enter a name, see availability, and if available submit a claim by entering their UPI ID; the UI must show clear feedback when a name is already taken and show the user the status of their submitted claim (at least pending/approved/rejected).",
+      "id": "feature-implement-local-storage-caching-for-comment-lists-app-events-and-usernames-cache-data-locally-on-initial-load-and-subsequent-fetches-serving-from-cache-for-instant-display-while-syncing-with-backend-in-the-background",
+      "title": "Implement local storage caching for comment lists, app events, and usernames. Cache data locally on initial load and subsequent fetches, serving from cache for instant display while syncing with backend in the background.",
       "reqIds": [
         "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-extend-the-existing-admin-panel-frontend-src-pages-adminpanel-tsx-with-a-new-section-tab-for-the-live-list-checker-that-supports-uploading-replacing-the-name-list-bulk-text-input-and-or-file-upload-viewing-all-claims-filtering-by-status-approving-rejecting-claims-setting-limits-and-per-claim-amount-viewing-totals-and-editing-contact-info-including-whatsapp-number",
-      "title": "Extend the existing Admin Panel (frontend/src/pages/AdminPanel.tsx) with a new section/tab for the Live List Checker that supports: uploading/replacing the name list (bulk text input and/or file upload), viewing all claims, filtering by status, approving/rejecting claims, setting limits and per-claim amount, viewing totals, and editing contact info including WhatsApp number.",
+      "id": "feature-add-background-music-system-that-auto-plays-when-the-website-opens-respecting-browser-autoplay-policies-with-muted-start-if-needed-include-visible-play-pause-and-volume-control-buttons-accessible-to-all-users",
+      "title": "Add background music system that auto-plays when the website opens (respecting browser autoplay policies with muted start if needed). Include visible play/pause and volume control buttons accessible to all users.",
       "reqIds": [
         "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-apply-a-coherent-visual-theme-for-the-new-live-list-checker-pages-sections-that-matches-the-existing-app-s-tailwind-shadcn-styling-but-is-distinct-and-consistent-e-g-warm-amber-charcoal-with-card-based-layout-clear-status-badges-and-accessible-form-states-do-not-use-a-blue-purple-primary-theme",
-      "title": "Apply a coherent visual theme for the new Live List Checker pages/sections that matches the existing app’s Tailwind/Shadcn styling but is distinct and consistent (e.g., ‘warm amber + charcoal’ with card-based layout, clear status badges, and accessible form states). Do not use a blue/purple primary theme.",
+      "id": "feature-add-music-upload-and-management-functionality-to-the-admin-panel-admins-can-upload-audio-files-mp3-wav-which-are-stored-in-the-backend-and-served-to-all-users-as-the-background-music-include-options-to-preview-replace-and-remove-the-current-music-file",
+      "title": "Add music upload and management functionality to the Admin Panel. Admins can upload audio files (MP3, WAV) which are stored in the backend and served to all users as the background music. Include options to preview, replace, and remove the current music file.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-replace-the-existing-interactive3dcube-component-with-a-lightweight-top-down-shooter-mini-game-using-html5-canvas-or-react-three-fiber-the-game-should-feature-player-controlled-character-movement-wasd-or-arrow-keys-shooting-mechanics-mouse-click-or-spacebar-and-enemy-waves-that-spawn-and-move-toward-the-player-keep-gameplay-simple-engaging-and-performant",
+      "title": "Replace the existing Interactive3DCube component with a lightweight top-down shooter mini-game using HTML5 Canvas or React Three Fiber. The game should feature player-controlled character movement (WASD or arrow keys), shooting mechanics (mouse click or spacebar), and enemy waves that spawn and move toward the player. Keep gameplay simple, engaging, and performant.",
       "reqIds": [
         "REQ-8"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-maintain-secure-data-handling-for-all-new-features-including-music-uploads-game-state-and-admin-operations-ensure-admin-access-code-protection-5676-remains-enforced-for-sensitive-operations",
+      "title": "Maintain secure data handling for all new features including music uploads, game state, and admin operations. Ensure admin access code protection (5676) remains enforced for sensitive operations.",
+      "reqIds": [
+        "REQ-9"
       ],
       "version": 1
     }
@@ -42,45 +87,48 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Live list checker: admin uploads name list; users claim names with UPI ID; prevent duplicate claims; record claims and totals; admin reviews claims, sets limits, and manages contact info incl. WhatsApp via admin panel.",
+      "summary": "Add delete buttons for individual comments and usernames in admin panel",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Implement backend data models and APIs for a live name-list checker: admin can upload/manage a list of names; users can claim a name; the system must prevent duplicate claims and track claim status (available/pending/approved/rejected) along with claimant identifier, timestamp, and UPI ID collected at claim time.",
-      "reqIds": [
-        "REQ-1"
-      ],
+      "summary": "Add Clear All button in admin panel to remove all data",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Add backend support for admin-configurable limits and totals: admin can set claim limits (e.g., maximum number of pending/approved claims overall and/or per user) and a per-claim rate/amount; backend must compute and expose totals based on claims (at minimum totals for approved claims, and optionally pending totals) and enforce limits during claim creation.",
-      "reqIds": [
-        "REQ-2"
-      ],
+      "summary": "Implement one-click download feature exporting all data in CSV and JSON formats",
+      "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Add backend support for admin-managed public contact information, including a WhatsApp number, that can be updated in the admin panel and queried by the user view.",
-      "reqIds": [
-        "REQ-3"
-      ],
+      "summary": "Implement local storage caching for faster list loading with backend sync",
+      "reqIds": [],
       "status": "pending"
     },
     {
-      "id": "AR-8",
-      "summary": "Add required backend state upgrade handling for the new live list checker storage (name list, claims, settings/limits, contact info) using backend/migration.mo according to the project’s conditional migration policy, ensuring existing stored data (current comment lists, images, messages, etc.) is preserved.",
-      "reqIds": [
-        "REQ-7"
-      ],
+      "id": "AR-5",
+      "summary": "Add background music system with auto-play, play/pause and volume controls",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Enable admin panel music upload and management stored live for all users",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Replace 3D cube with lightweight top-down shooter mini-game",
+      "reqIds": [],
       "status": "pending"
     }
   ],
-  "gameProjectType": "none",
-  "projectName": "Live List Checker",
+  "projectName": "App Review Manager",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

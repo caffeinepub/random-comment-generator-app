@@ -1,6 +1,8 @@
-import { Moon, Sun, Lock, Unlock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Moon, Sun, Lock } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import MusicControls from './MusicControls';
 
 interface HeaderProps {
   onLogout: () => void;
@@ -11,28 +13,30 @@ export default function Header({ onLogout, isAdminUnlocked }: HeaderProps) {
   const { theme, setTheme } = useTheme();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-lg">RV</span>
+    <header className="sticky top-0 z-50 w-full border-b border-blue-200/50 dark:border-blue-800/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-lg">
+      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 via-teal-500 to-orange-500 flex items-center justify-center shadow-lg">
+              <span className="text-2xl font-black text-white">A</span>
+            </div>
+            <div>
+              <h1 className="text-2xl font-black bg-gradient-to-r from-blue-600 via-teal-600 to-orange-600 bg-clip-text text-transparent leading-tight">
+                App Review
+              </h1>
+              <p className="text-xs text-muted-foreground font-medium">Comment Management</p>
+            </div>
           </div>
-          <h1 className="text-xl font-bold gradient-text">Comment Generator</h1>
         </div>
 
         <div className="flex items-center gap-3">
-          {isAdminUnlocked && (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-accent/50 border-2 border-[oklch(var(--gradient-start)/0.3)]">
-              <Unlock className="w-4 h-4 text-[oklch(var(--gradient-start))]" />
-              <span className="text-sm font-semibold">Admin Unlocked</span>
-            </div>
-          )}
-
+          <MusicControls />
+          
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="rounded-xl h-10 w-10"
+            className="h-10 w-10 rounded-full hover:bg-blue-500/10"
           >
             <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
             <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
@@ -40,14 +44,23 @@ export default function Header({ onLogout, isAdminUnlocked }: HeaderProps) {
           </Button>
 
           {isAdminUnlocked && (
-            <Button
-              variant="outline"
-              onClick={onLogout}
-              className="rounded-xl h-10 px-4 font-semibold border-2 hover:border-[oklch(var(--gradient-start))]"
-            >
-              <Lock className="w-4 h-4 mr-2" />
-              Lock Admin
-            </Button>
+            <>
+              <Badge
+                variant="outline"
+                className="px-3 py-1.5 rounded-full border-2 border-green-500/50 bg-green-500/10 text-green-700 dark:text-green-400 font-bold"
+              >
+                Admin Unlocked
+              </Badge>
+              <Button
+                onClick={onLogout}
+                variant="outline"
+                size="sm"
+                className="h-9 px-4 rounded-full border-2 border-red-500/50 text-red-600 dark:text-red-400 hover:bg-red-500/10 font-semibold"
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Lock Admin
+              </Button>
+            </>
           )}
         </div>
       </div>

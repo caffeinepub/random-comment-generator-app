@@ -15,6 +15,7 @@ export class ExternalBlob {
     withUploadProgress(onProgress: (percentage: number) => void): ExternalBlob;
 }
 export type DeviceId = string;
+export type AppEventId = string;
 export type CommentId = string;
 export type Time = bigint;
 export interface Comment {
@@ -40,6 +41,12 @@ export interface PaymentRecord {
 }
 export type CommentListId = string;
 export type MessageId = string;
+export interface AppEvent {
+    id: AppEventId;
+    name: string;
+    createdAt: Time;
+    usernames: Array<string>;
+}
 export interface Message {
     id: MessageId;
     content: string;
@@ -68,54 +75,30 @@ export enum UserRole {
     user = "user",
     guest = "guest"
 }
-
-// Live List Checker Types - Exported
-export type NameListId = string;
-export type ClaimId = string;
-export type ClaimStatus = 'pending' | 'approved' | 'rejected';
-
-export interface ClaimRecord {
-    id: ClaimId;
-    name: string;
-    upiId: string;
-    claimant: Principal;
-    status: ClaimStatus;
-    timestamp: Time;
-}
-
-export interface LiveListSettings {
-    maxClaims: bigint;
-    perClaimAmount: bigint;
-}
-
-export interface LiveListTotals {
-    pendingCount: bigint;
-    approvedCount: bigint;
-    rejectedCount: bigint;
-    pendingTotalAmount: bigint;
-    approvedTotalAmount: bigint;
-}
-
-export interface ContactInfo {
-    whatsappNumber: string;
-    email: string;
-    additionalInfo: string;
-}
-
 export interface backendInterface {
     addComment(accessCode: string, listId: CommentListId, id: CommentId, content: string): Promise<void>;
     addFundsToWallet(accessCode: string, userPrincipal: Principal, amount: bigint): Promise<void>;
+    addUsernameToAppEvent(accessCode: string, appEventId: AppEventId, username: string): Promise<void>;
+    addUsernamesToAppEvent(accessCode: string, appEventId: AppEventId, usernames: Array<string>): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
+    checkUsernamesInAppEvent(appEventId: AppEventId, usernamesToCheck: Array<string>): Promise<Array<[string, boolean]>>;
     clearAllCommentLists(accessCode: string): Promise<void>;
+    clearEverything(accessCode: string): Promise<void>;
+    createAppEvent(accessCode: string, name: string): Promise<AppEventId>;
     createCommentList(accessCode: string, listId: CommentListId): Promise<void>;
+    deleteAppEvent(accessCode: string, appEventId: AppEventId): Promise<void>;
     deleteCommentList(accessCode: string, listId: CommentListId): Promise<void>;
+    deleteMessage(accessCode: string, messageId: MessageId): Promise<void>;
     downloadAllRatingImages(accessCode: string): Promise<Array<RatingImageMetadata>>;
     generateBulkComments(bulkGeneratorKey: string, listId: CommentListId, count: bigint): Promise<Array<Comment>>;
     generateSingleComment(listId: CommentListId, deviceId: DeviceId): Promise<string | null>;
+    getAllAppEvents(accessCode: string): Promise<Array<AppEvent>>;
     getAllBulkCommentTotals(accessCode: string): Promise<Array<[CommentListId, bigint]>>;
     getAllMessages(accessCode: string): Promise<Array<Message>>;
     getAllPaymentRecords(accessCode: string): Promise<Array<[Principal, Array<PaymentRecord>]>>;
     getAllUserRatingImages(accessCode: string): Promise<Array<[string, Array<RatingImageMetadata>]>>;
+    getAppEvent(accessCode: string, appEventId: AppEventId): Promise<AppEvent | null>;
+    getAppEventIds(): Promise<Array<[AppEventId, string]>>;
     getAvailableComments(listId: CommentListId): Promise<Array<Comment> | null>;
     getBulkGeneratorKey(accessCode: string, masked: boolean): Promise<string | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
@@ -140,7 +123,9 @@ export interface backendInterface {
     removeAllUserRatingImages(accessCode: string): Promise<void>;
     removeComment(accessCode: string, listId: CommentListId, commentId: CommentId): Promise<void>;
     removeRatingImage(accessCode: string, userName: string, imageId: string): Promise<void>;
+    removeUsernameFromAppEvent(accessCode: string, appEventId: AppEventId, username: string): Promise<void>;
     replyMessage(accessCode: string, replyContent: string): Promise<MessageId>;
+    resetAppEventUsernames(accessCode: string, appEventId: AppEventId): Promise<void>;
     resetBulkGeneratorKey(accessCode: string): Promise<void>;
     resetCommentList(accessCode: string, listId: CommentListId): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
@@ -149,19 +134,4 @@ export interface backendInterface {
     unlockCommentList(accessCode: string, listId: CommentListId): Promise<void>;
     updatePaymentStatus(accessCode: string, userPrincipal: Principal, paymentId: string, newStatus: PaymentStatus): Promise<void>;
     uploadRatingImage(accessCode: string, userName: string, image: ExternalBlob): Promise<RatingImageId>;
-    
-    // Live List Checker Methods (to be implemented in backend)
-    uploadNameList(accessCode: string, names: Array<string>): Promise<void>;
-    getActiveNameList(): Promise<Array<string>>;
-    checkNameAvailability(name: string): Promise<boolean>;
-    createClaim(name: string, upiId: string): Promise<ClaimId>;
-    getClaimStatus(name: string): Promise<ClaimRecord | null>;
-    getAllClaims(accessCode: string): Promise<Array<ClaimRecord>>;
-    approveClaim(accessCode: string, claimId: ClaimId): Promise<void>;
-    rejectClaim(accessCode: string, claimId: ClaimId): Promise<void>;
-    getLiveListTotals(accessCode: string): Promise<LiveListTotals>;
-    setLiveListSettings(accessCode: string, settings: LiveListSettings): Promise<void>;
-    getLiveListSettings(accessCode: string): Promise<LiveListSettings>;
-    setContactInfo(accessCode: string, info: ContactInfo): Promise<void>;
-    getContactInfo(): Promise<ContactInfo>;
 }

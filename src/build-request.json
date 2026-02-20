@@ -1,180 +1,231 @@
 {
   "kind": "build_request",
-  "title": "Add live list checker with admin-managed name lists, claims, limits, totals, and contact info",
-  "projectName": "Live List Checker",
+  "title": "Add admin controls, music system, local storage caching, and top-down shooter game",
+  "projectName": "App Review Manager",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Implement backend data models and APIs for a live name-list checker: admin can upload/manage a list of names; users can claim a name; the system must prevent duplicate claims and track claim status (available/pending/approved/rejected) along with claimant identifier, timestamp, and UPI ID collected at claim time.",
-      "target": "backend",
+      "text": "Add delete buttons for individual comments in the Admin Panel comment list management section. Each comment row should have a delete icon/button that removes that specific comment from the backend and updates the UI.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "Integrate a live list checker feature into my existing site. Admin uploads a name list. Users enter their name to claim; if available, it’s marked pending. At claim time, the user must enter their UPI ID. The system records the claimed names, the user’s UPI ID... If a name is already taken, notify the user. Admin reviews claims... via the admin panel."
+          "add options to delete comments or names through admin panel"
         ]
       },
       "acceptanceCriteria": [
-        "Admin can upload/replace a name list in the backend and fetch it back for display.",
-        "A user claim attempt for an available name creates a claim record with status=PENDING and stores the provided UPI ID.",
-        "A user claim attempt for a name that is already pending/approved results in a backend error (or an explicit ‘taken’ response) that the frontend can show to the user.",
-        "Backend exposes queries to fetch claim records for admin review, including name, status, UPI ID, timestamp, and claimant principal (or other stable identifier)."
+        "Each comment in the admin panel displays a delete button",
+        "Clicking delete removes the comment from backend storage",
+        "UI updates immediately after deletion without page refresh",
+        "Deletion requires confirmation to prevent accidental removal"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add backend support for admin-configurable limits and totals: admin can set claim limits (e.g., maximum number of pending/approved claims overall and/or per user) and a per-claim rate/amount; backend must compute and expose totals based on claims (at minimum totals for approved claims, and optionally pending totals) and enforce limits during claim creation.",
-      "target": "backend",
+      "text": "Add delete buttons for individual usernames in the Admin Live List Panel. Each username entry should have a delete icon/button that removes it from the specific app/event list.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "Admin reviews claims, sets limits... calculates a total based on claims."
+          "add options to delete comments or names through admin panel"
         ]
       },
       "acceptanceCriteria": [
-        "Admin can set and read back limit settings and per-claim amount settings.",
-        "When limits are reached, creating a new claim is rejected with a clear error message.",
-        "Backend exposes a totals query that returns computed totals (e.g., approvedCount, pendingCount, approvedTotalAmount, pendingTotalAmount) derived from stored claims and current settings."
+        "Each username in live lists displays a delete button",
+        "Clicking delete removes only that username from the selected app/event",
+        "UI reflects the deletion immediately",
+        "Deletion includes confirmation dialog"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add backend support for admin-managed public contact information, including a WhatsApp number, that can be updated in the admin panel and queried by the user view.",
-      "target": "backend",
+      "text": "Add a Clear All button to the Admin Panel that removes all comments, app events, and usernames from the system. This should be a prominent action button with strong confirmation.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5"
         ],
         "quotes": [
-          "...updates contact info (including a WhatsApp number) via the admin panel."
+          "also make all clear button"
         ]
       },
       "acceptanceCriteria": [
-        "Admin can set contact info fields including WhatsApp number.",
-        "User-facing query returns the current contact info.",
-        "Contact info persists across canister upgrades (state is stable)."
+        "Clear All button visible in admin panel main view",
+        "Button requires double confirmation before executing",
+        "Clears all comments from all lists",
+        "Clears all app/event entries and their usernames",
+        "Shows success message after clearing",
+        "Updates all dependent UI elements immediately"
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Create/extend frontend React Query hooks (in the existing hooks pattern used by frontend/src/hooks/useQueries.ts) for: uploading/replacing the name list, fetching the list, creating a claim with UPI ID, fetching claim status for a name, fetching admin claim queues, approving/rejecting claims, fetching totals, and getting/setting contact info and limits.",
+      "text": "Implement one-click download feature in Admin Panel that exports all data (comments, app events, usernames) in both CSV and JSON formats. The download should bundle all data types into separate files within a single download action.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5",
+          "msg-7"
         ],
         "quotes": [
-          "Build it"
+          "Download it's full list",
+          "One-click download button that exports all data (comments, apps/events, usernames) in both CSV and JSON formats"
         ]
       },
       "acceptanceCriteria": [
-        "All new backend methods needed by the UI have corresponding React Query hooks (queries/mutations) with cache invalidation similar to existing patterns (e.g., invalidating list/totals on mutation).",
-        "Errors such as ‘name already taken’ are surfaced to the UI via toast or inline messaging (English text)."
+        "Download button prominently placed in admin panel",
+        "Single click triggers download of multiple files or a zip archive",
+        "Exports comments list as CSV and JSON",
+        "Exports app/event data with usernames as CSV and JSON",
+        "Files are named descriptively with timestamps",
+        "Download works across modern browsers"
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Add a user-facing ‘Live List Checker’ UI flow that allows a user to: view instructions, enter a name, see availability, and if available submit a claim by entering their UPI ID; the UI must show clear feedback when a name is already taken and show the user the status of their submitted claim (at least pending/approved/rejected).",
+      "text": "Implement local storage caching for comment lists, app events, and usernames. Cache data locally on initial load and subsequent fetches, serving from cache for instant display while syncing with backend in the background.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5",
+          "msg-7"
         ],
         "quotes": [
-          "Users enter their name to claim; if available, it’s marked pending. At claim time, the user must enter their UPI ID... If a name is already taken, notify the user."
+          "its list save into its local storage and user get the data through it",
+          "Local Storage Caching: Fast-loading lists that sync with the backend"
         ]
       },
       "acceptanceCriteria": [
-        "User can enter a name and submit a claim with a required UPI ID field.",
-        "If the name is already claimed, the UI shows an English message indicating it is already taken and does not create a new claim.",
-        "After submitting, the UI shows claim status as ‘Pending’ (and updates to ‘Approved’/‘Rejected’ after admin action).",
-        "User can see current contact info (including WhatsApp number) in the Live List Checker user view."
+        "All list data is cached in localStorage on fetch",
+        "Cached data loads instantly on page load",
+        "Background sync with backend occurs after displaying cache",
+        "Cache updates when backend data changes",
+        "Cache invalidation strategy prevents stale data",
+        "Performance improvement is measurable (faster initial render)"
       ]
     },
     {
       "id": "REQ-6",
-      "text": "Extend the existing Admin Panel (frontend/src/pages/AdminPanel.tsx) with a new section/tab for the Live List Checker that supports: uploading/replacing the name list (bulk text input and/or file upload), viewing all claims, filtering by status, approving/rejecting claims, setting limits and per-claim amount, viewing totals, and editing contact info including WhatsApp number.",
+      "text": "Add background music system that auto-plays when the website opens (respecting browser autoplay policies with muted start if needed). Include visible play/pause and volume control buttons accessible to all users.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5",
+          "msg-7"
         ],
         "quotes": [
-          "Admin uploads a name list... Admin reviews claims, sets limits, and updates contact info (including a WhatsApp number) via the admin panel."
+          "add music music after opening website",
+          "Auto-play background music with visible play/pause and volume controls for users"
         ]
       },
       "acceptanceCriteria": [
-        "Admin can paste/upload a list of names and submit it; the list becomes active immediately for user checks.",
-        "Admin can see a table/list of claims with name, UPI ID, status, and timestamp.",
-        "Admin can approve or reject a claim; the claim status updates in the UI after action.",
-        "Admin can set limits and per-claim amount, and see totals computed from claims.",
-        "Admin can edit and save contact info including WhatsApp number."
+        "Music attempts to auto-play on site load (muted if browser blocks unmuted autoplay)",
+        "Play/pause button visible in UI (header or fixed position)",
+        "Volume slider control accessible to users",
+        "Music state persists across page navigation",
+        "Graceful fallback if autoplay is blocked",
+        "User preferences (volume level, play state) saved in localStorage"
       ]
     },
     {
       "id": "REQ-7",
-      "text": "Add required backend state upgrade handling for the new live list checker storage (name list, claims, settings/limits, contact info) using backend/migration.mo according to the project’s conditional migration policy, ensuring existing stored data (current comment lists, images, messages, etc.) is preserved.",
-      "target": "backend",
+      "text": "Add music upload and management functionality to the Admin Panel. Admins can upload audio files (MP3, WAV) which are stored in the backend and served to all users as the background music. Include options to preview, replace, and remove the current music file.",
+      "target": "both",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5",
+          "msg-7"
         ],
         "quotes": [
-          "Build it"
+          "the music added by the admin panel it is stored live all people can little live while opening site",
+          "managed through admin panel"
         ]
       },
       "acceptanceCriteria": [
-        "Upgrading the canister does not erase existing unrelated state.",
-        "New live list checker state is initialized safely on upgrade if missing.",
-        "The canister compiles and deploys with stable upgrade paths."
+        "Admin panel includes music management section",
+        "File upload accepts MP3 and WAV formats",
+        "Uploaded music is stored in backend as a blob or asset",
+        "All users receive the same music URL from backend",
+        "Admin can preview uploaded music before making it live",
+        "Admin can replace or remove current music",
+        "Music changes propagate to all connected users within reasonable time"
       ]
     },
     {
       "id": "REQ-8",
-      "text": "Apply a coherent visual theme for the new Live List Checker pages/sections that matches the existing app’s Tailwind/Shadcn styling but is distinct and consistent (e.g., ‘warm amber + charcoal’ with card-based layout, clear status badges, and accessible form states). Do not use a blue/purple primary theme.",
+      "text": "Replace the existing Interactive3DCube component with a lightweight top-down shooter mini-game using HTML5 Canvas or React Three Fiber. The game should feature player-controlled character movement (WASD or arrow keys), shooting mechanics (mouse click or spacebar), and enemy waves that spawn and move toward the player. Keep gameplay simple, engaging, and performant.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-1"
+          "msg-5",
+          "msg-9"
         ],
         "quotes": [
-          "Build it"
+          "replace 3d model cube with any game runs instead of cube place intresting game",
+          "top-down shooter mini-game where players control a character and shoot enemies"
         ]
       },
       "acceptanceCriteria": [
-        "Live List Checker UI uses consistent typography, spacing, and components (cards, badges, inputs, dialogs) aligned with the existing design system.",
-        "Status (Available/Pending/Approved/Rejected/Taken) is clearly distinguishable using consistent badge colors and text labels.",
-        "All user-facing text is English."
+        "Game renders in the same position where the 3D cube currently displays",
+        "Player character can move in four directions using keyboard controls",
+        "Player can shoot projectiles toward mouse cursor or in a fixed direction",
+        "Enemies spawn periodically and move toward player",
+        "Collision detection between projectiles and enemies",
+        "Score counter displays enemy defeats",
+        "Game over condition when player is hit by enemies",
+        "Restart button available after game over",
+        "Game runs smoothly at 60 FPS on modern devices",
+        "Visual style matches or complements the existing app design"
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "text": "Maintain secure data handling for all new features including music uploads, game state, and admin operations. Ensure admin access code protection (5676) remains enforced for sensitive operations.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-7"
+        ],
+        "quotes": [
+          "secure data handling"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Admin access code validation required for delete operations",
+        "Admin access code validation required for Clear All operation",
+        "Admin access code validation required for music management",
+        "File uploads validated for type and size",
+        "No sensitive data exposed in frontend code",
+        "Backend validates all admin operations with access code"
       ]
     }
   ],
   "constraints": [
-    "Keep all Motoko logic in the single backend actor (backend/main.mo).",
-    "Only generate/modify backend/migration.mo if needed for stable state upgrade of new storage.",
-    "Do not edit frontend files under immutable paths: frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui.",
-    "No external databases or third-party authentication providers; use the existing Internet Identity integration and existing admin PIN/access-code gating patterns."
+    "Do not modify frontend/src/hooks/useInternetIdentity.ts",
+    "Do not modify frontend/src/hooks/useActor.ts",
+    "Do not modify frontend/src/main.tsx",
+    "Do not modify frontend/src/components/ui/* files",
+    "Maintain single-actor architecture in backend/main.mo",
+    "Preserve existing admin access code (5676) functionality",
+    "Maintain existing App Review & Comment Management structure",
+    "Keep all features responsive across devices"
   ],
   "nonGoals": [
-    "Implementing real WhatsApp messaging/notifications or any direct WhatsApp API integration (only store and display a WhatsApp contact number).",
-    "Real-time updates via WebSockets or push notifications.",
-    "Integrating external payment gateways or on-chain wallet features beyond computing totals from claims."
+    "Redesigning the core structure of the website",
+    "Changing the existing color scheme or visual design beyond the mini-game",
+    "Adding real-time multiplayer to the shooter game",
+    "Implementing complex 3D graphics for the game",
+    "Adding authentication beyond the existing admin access code",
+    "Modifying the existing comment generation logic",
+    "Changing the Internet Identity integration"
   ],
   "imageRequirements": {
     "required": [],
     "edits": []
-  },
-  "userProfileUpdate": {
-    "goalsToAdd": [],
-    "goalsToRemove": [],
-    "preferencesToAdd": [],
-    "preferencesToRemove": [],
-    "miscToAdd": [],
-    "miscToRemove": [],
-    "fieldsToSet": {},
-    "fieldsToDelete": []
   }
 }

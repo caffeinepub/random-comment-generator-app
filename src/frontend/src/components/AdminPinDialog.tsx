@@ -81,22 +81,22 @@ export default function AdminPinDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md rounded-2xl">
-        <DialogHeader>
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl gradient-bg-diagonal flex items-center justify-center shadow-xl animate-pulse-glow">
-              <Shield className="w-8 h-8 text-white" />
+      <DialogContent className="sm:max-w-md rounded-3xl border-2 border-blue-200/50 dark:border-blue-800/50">
+        <DialogHeader className="space-y-4">
+          <div className="flex items-center justify-center">
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-2xl animate-pulse">
+              <Shield className="w-10 h-10 text-white" />
             </div>
           </div>
-          <DialogTitle className="text-2xl text-center gradient-text font-bold">
+          <DialogTitle className="text-3xl text-center font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
             Admin Panel Access
           </DialogTitle>
-          <DialogDescription className="text-center text-base">
+          <DialogDescription className="text-center text-base text-muted-foreground">
             Enter the 4-digit access code to unlock the Admin Panel
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 pt-2">
           <div className="space-y-3">
             <Label htmlFor="pin" className="text-sm font-semibold flex items-center gap-2">
               <Lock className="w-4 h-4" />
@@ -110,35 +110,42 @@ export default function AdminPinDialog({
               placeholder="••••"
               maxLength={4}
               disabled={isValidating}
-              className={`h-14 text-center text-2xl tracking-widest rounded-xl border-2 ${
-                error ? 'border-destructive' : 'border-[oklch(var(--gradient-start)/0.3)]'
+              className={`h-16 text-center text-3xl tracking-[0.5em] rounded-2xl border-2 font-bold ${
+                error ? 'border-destructive focus-visible:ring-destructive' : 'border-blue-300 dark:border-blue-700 focus-visible:ring-blue-500'
               }`}
               autoFocus
             />
             {error && (
-              <p className="text-sm text-destructive font-medium flex items-center gap-2">
+              <p className="text-sm text-destructive font-medium flex items-center gap-2 animate-shake">
                 <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
                 {error}
               </p>
             )}
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={handleCancel}
               disabled={isValidating}
-              className="w-full sm:w-auto h-11 rounded-xl border-2 font-semibold"
+              className="w-full sm:flex-1 h-12 rounded-2xl border-2 font-semibold text-base hover:bg-gray-100 dark:hover:bg-gray-800"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={pin.length !== 4 || isValidating}
-              className="w-full sm:w-auto h-11 rounded-xl gradient-bg btn-glow font-semibold"
+              className="w-full sm:flex-1 h-12 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white shadow-lg hover:shadow-xl transition-all duration-300 font-semibold text-base disabled:opacity-50"
             >
-              {isValidating ? 'Verifying...' : 'Unlock Admin Panel'}
+              {isValidating ? (
+                <>
+                  <div className="w-5 h-5 border-3 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                  Verifying...
+                </>
+              ) : (
+                'Unlock Admin Panel'
+              )}
             </Button>
           </DialogFooter>
         </form>

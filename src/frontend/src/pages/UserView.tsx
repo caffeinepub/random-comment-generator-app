@@ -1,189 +1,209 @@
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Copy, CheckCircle2, Lock, Unlock, Sparkles, ListChecks } from 'lucide-react';
-import { useGetCommentListIds, useGetLockedCommentListIds, useGetRemainingCount } from '../hooks/useQueries';
+import { Copy, Check, Sparkles, Lock, Unlock } from 'lucide-react';
+import {
+  useGetCommentListIds,
+  useGetLockedCommentListIds,
+  useGetRemainingCount,
+} from '../hooks/useQueries';
 import { useDeviceId } from '../hooks/useDeviceId';
 import { useDeviceScopedGenerateComment } from '../hooks/useDeviceScopedGenerateComment';
 import { useHasSingleCommentGenerated } from '../hooks/useDeviceScopedUserCommentHistory';
 import { toast } from 'sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LiveListCheckerUserSection from '../components/live-list-checker/LiveListCheckerUserSection';
+import TopDownShooterGame from '../components/TopDownShooterGame';
 
 export default function UserView() {
-  const [selectedListId, setSelectedListId] = useState<string>('');
-  const [generatedComment, setGeneratedComment] = useState<string>('');
+  const [selectedListId, setSelectedListId] = useState<string | null>(null);
+  const [generatedComment, setGeneratedComment] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const deviceId = useDeviceId();
-  const { data: commentListIds = [], isLoading: loadingListIds } = useGetCommentListIds();
+  const { data: listIds = [] } = useGetCommentListIds();
   const { data: lockedListIds = [] } = useGetLockedCommentListIds();
-  const { data: remainingCount = BigInt(0), isLoading: loadingRemaining } = useGetRemainingCount(selectedListId);
-  const generateCommentMutation = useDeviceScopedGenerateComment();
+  const { data: remainingCount = 0n } = useGetRemainingCount(selectedListId);
   const { data: hasGenerated = false } = useHasSingleCommentGenerated(selectedListId);
+  const { mutate: generateComment, isPending: isGenerating } = useDeviceScopedGenerateComment();
 
-  const isListLocked = selectedListId ? lockedListIds.includes(selectedListId) : false;
-  const canGenerate = selectedListId && !hasGenerated && !isListLocked && Number(remainingCount) > 0;
+  const lockedListIdsSet = new Set(lockedListIds);
+  const isSelectedListLocked = selectedListId ? lockedListIdsSet.has(selectedListId) : false;
 
-  const handleGenerateComment = async () => {
-    if (!selectedListId) return;
-
-    try {
-      const comment = await generateCommentMutation.mutateAsync({ listId: selectedListId });
-      if (comment) {
-        setGeneratedComment(comment);
-        toast.success('Comment generated successfully!');
-      } else {
-        toast.error('Unable to generate comment. The list may be locked or you have already generated a comment.');
-      }
-    } catch (error: any) {
-      toast.error(error?.message || 'Failed to generate comment');
+  const handleGenerate = () => {
+    if (!selectedListId) {
+      toast.error('Please select a comment list');
+      return;
     }
+
+    if (isSelectedListLocked) {
+      toast.error('This comment list is currently locked');
+      return;
+    }
+
+    if (hasGenerated) {
+      toast.error('You have already generated a comment for this list on this device');
+      return;
+    }
+
+    generateComment(
+      { listId: selectedListId },
+      {
+        onSuccess: (comment) => {
+          if (comment) {
+            setGeneratedComment(comment);
+          }
+        },
+      }
+    );
   };
 
-  const handleCopyComment = () => {
+  const handleCopy = () => {
     if (generatedComment) {
       navigator.clipboard.writeText(generatedComment);
+      setCopied(true);
       toast.success('Comment copied to clipboard!');
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
-      <Tabs defaultValue="comments" className="w-full">
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 h-14 rounded-xl p-1 bg-accent/50 mb-6">
-          <TabsTrigger 
-            value="comments" 
-            className="text-base font-bold rounded-lg data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300"
-          >
-            <Sparkles className="w-4 h-4 mr-2" />
-            Comments
-          </TabsTrigger>
-          <TabsTrigger 
-            value="list-checker" 
-            className="text-base font-bold rounded-lg data-[state=active]:gradient-bg data-[state=active]:text-white transition-all duration-300"
-          >
-            <ListChecks className="w-4 h-4 mr-2" />
-            List Checker
-          </TabsTrigger>
-        </TabsList>
+    <div className="max-w-6xl mx-auto space-y-8 py-4 animate-fade-slide-in">
+      <div className="text-center space-y-3">
+        <h2 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-600 via-teal-600 to-orange-600 bg-clip-text text-transparent leading-tight">
+          Customer View
+        </h2>
+        <p className="text-muted-foreground text-lg">
+          Generate comments and play the mini-game
+        </p>
+      </div>
 
-        <TabsContent value="comments" className="space-y-8">
-          {/* Single Comment Generator */}
-          <Card className="shadow-2xl border-2 border-accent/20 overflow-hidden">
-            <div className="gradient-bg-diagonal h-2"></div>
-            <CardHeader className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl gradient-bg flex items-center justify-center shadow-lg">
-                  <Sparkles className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <CardTitle className="text-3xl font-extrabold gradient-text">Single Comment Generator</CardTitle>
-                  <CardDescription className="text-base mt-1">
-                    Generate one comment per list per device
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <label className="text-sm font-bold text-foreground">Select Comment List</label>
-                <Select value={selectedListId} onValueChange={setSelectedListId} disabled={loadingListIds}>
-                  <SelectTrigger className="w-full h-12 text-base border-2 border-accent/30 focus:border-accent transition-colors">
-                    <SelectValue placeholder={loadingListIds ? 'Loading lists...' : 'Choose a comment list'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {commentListIds.map((listId) => {
-                      const isLocked = lockedListIds.includes(listId);
-                      return (
-                        <SelectItem key={listId} value={listId} disabled={isLocked}>
-                          <div className="flex items-center gap-2">
-                            {isLocked ? <Lock className="w-4 h-4 text-red-500" /> : <Unlock className="w-4 h-4 text-green-500" />}
-                            <span>{listId}</span>
-                            {isLocked && <Badge variant="destructive" className="ml-2">Locked</Badge>}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-              </div>
+      {/* Top-Down Shooter Game */}
+      <TopDownShooterGame />
 
-              {selectedListId && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-xl bg-accent/10 border-2 border-accent/20">
-                    <span className="text-sm font-semibold text-muted-foreground">Remaining Comments</span>
-                    <Badge variant="secondary" className="text-lg font-bold px-4 py-1">
-                      {loadingRemaining ? <Loader2 className="w-4 h-4 animate-spin" /> : remainingCount.toString()}
-                    </Badge>
-                  </div>
+      {/* Single Comment Generator */}
+      <Card className="border-2 border-blue-200/50 dark:border-blue-800/50 rounded-3xl overflow-hidden shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+        <CardHeader className="relative bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-orange-500/10">
+          <CardTitle className="flex items-center gap-3 text-2xl">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            Single Comment Generator
+          </CardTitle>
+          <CardDescription className="text-base">
+            Generate one comment per list per device
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5 relative pt-6">
+          <div className="space-y-2">
+            <Label htmlFor="singleListSelect" className="text-sm font-semibold">
+              Select Comment List
+            </Label>
+            <select
+              id="singleListSelect"
+              value={selectedListId || ''}
+              onChange={(e) => {
+                setSelectedListId(e.target.value || null);
+                setGeneratedComment(null);
+              }}
+              className="w-full h-12 text-base rounded-2xl border-2 px-4 bg-background"
+            >
+              <option value="">Choose a list...</option>
+              {listIds.map((listId) => (
+                <option key={listId} value={listId}>
+                  {listId}
+                </option>
+              ))}
+            </select>
+          </div>
 
-                  {isListLocked && (
-                    <div className="p-4 rounded-xl bg-red-50 dark:bg-red-950/20 border-2 border-red-200 dark:border-red-800">
-                      <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-                        <Lock className="w-5 h-5" />
-                        <span className="font-semibold">This list is currently locked</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {hasGenerated && !isListLocked && (
-                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-400">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span className="font-semibold">You have already generated a comment from this list</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <Button
-                    onClick={handleGenerateComment}
-                    disabled={!canGenerate || generateCommentMutation.isPending}
-                    className="w-full h-14 text-lg font-bold gradient-bg hover:opacity-90 transition-opacity shadow-lg disabled:opacity-50"
+          {selectedListId && (
+            <div className="flex items-center gap-3 p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/50 border-2 border-blue-200/50 dark:border-blue-800/50">
+              <div className="flex items-center gap-2">
+                {isSelectedListLocked ? (
+                  <Lock className="w-5 h-5 text-red-600 dark:text-red-400" />
+                ) : (
+                  <Unlock className="w-5 h-5 text-green-600 dark:text-green-400" />
+                )}
+                <span className="text-sm font-semibold">
+                  Status:{' '}
+                  <span
+                    className={
+                      isSelectedListLocked
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-green-600 dark:text-green-400'
+                    }
                   >
-                    {generateCommentMutation.isPending ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-5 h-5 mr-2" />
-                        Generate Comment
-                      </>
-                    )}
-                  </Button>
+                    {isSelectedListLocked ? 'Locked' : 'Available'}
+                  </span>
+                </span>
+              </div>
+              <div className="ml-auto">
+                <Badge variant="outline" className="text-sm px-3 py-1 rounded-xl border-2 font-semibold">
+                  {Number(remainingCount)} remaining
+                </Badge>
+              </div>
+            </div>
+          )}
 
-                  {generatedComment && (
-                    <div className="space-y-3 p-6 rounded-xl bg-gradient-to-br from-accent/5 to-accent/10 border-2 border-accent/30">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-muted-foreground">Your Generated Comment</span>
-                        <Button
-                          onClick={handleCopyComment}
-                          variant="outline"
-                          size="sm"
-                          className="gap-2 border-2 border-accent/30 hover:border-accent"
-                        >
-                          <Copy className="w-4 h-4" />
-                          Copy
-                        </Button>
-                      </div>
-                      <p className="text-base leading-relaxed p-4 rounded-lg bg-background/50 border border-accent/20">
-                        {generatedComment}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {hasGenerated && selectedListId && (
+            <div className="p-4 rounded-2xl bg-yellow-50/50 dark:bg-yellow-950/50 border-2 border-yellow-200/50 dark:border-yellow-800/50">
+              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
+                ⚠️ You have already generated a comment for this list on this device
+              </p>
+            </div>
+          )}
 
-        <TabsContent value="list-checker">
-          <LiveListCheckerUserSection />
-        </TabsContent>
-      </Tabs>
+          <Button
+            onClick={handleGenerate}
+            disabled={!selectedListId || isGenerating || isSelectedListLocked || hasGenerated}
+            className="w-full h-14 text-lg font-bold rounded-2xl bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+            size="lg"
+          >
+            {isGenerating ? (
+              <>
+                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-6 h-6 mr-2" />
+                Generate Comment
+              </>
+            )}
+          </Button>
+
+          {generatedComment && (
+            <div className="space-y-3 p-5 rounded-2xl bg-gradient-to-br from-blue-50 via-teal-50 to-orange-50 dark:from-blue-950 dark:via-teal-950 dark:to-orange-950 border-2 border-blue-200/50 dark:border-blue-800/50">
+              <Label className="text-sm font-semibold">Generated Comment</Label>
+              <Textarea
+                value={generatedComment}
+                readOnly
+                rows={4}
+                className="rounded-2xl border-2 text-base resize-none bg-white/50 dark:bg-gray-900/50"
+              />
+              <Button
+                onClick={handleCopy}
+                variant="outline"
+                className="w-full h-12 rounded-2xl border-2 font-semibold"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-5 h-5 mr-2 text-green-600" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-5 h-5 mr-2" />
+                    Copy to Clipboard
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -22,7 +22,7 @@ export default function BulkGeneratorKeyManager() {
   const [newKey, setNewKey] = useState('');
   const [showKey, setShowKey] = useState(false);
 
-  const { data: currentKey, isLoading: isLoadingKey } = useGetBulkGeneratorKey(true);
+  const { data: currentKey, isLoading: isLoadingKey } = useGetBulkGeneratorKey();
   const { mutate: setKey, isPending: isSettingKey } = useSetBulkGeneratorKey();
   const { mutate: resetKey, isPending: isResettingKey } = useResetBulkGeneratorKey();
 
@@ -46,11 +46,11 @@ export default function BulkGeneratorKeyManager() {
   const isKeySet = currentKey !== null;
 
   return (
-    <Card className="card-glow border-2 border-[oklch(var(--gradient-start)/0.2)] rounded-2xl overflow-hidden">
-      <div className="absolute inset-0 gradient-bg-diagonal opacity-5 pointer-events-none" />
-      <CardHeader className="relative">
+    <Card className="border-2 border-blue-200/50 dark:border-blue-800/50 rounded-3xl overflow-hidden shadow-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-teal-500/5 to-orange-500/5 pointer-events-none" />
+      <CardHeader className="relative bg-gradient-to-r from-blue-500/10 via-teal-500/10 to-orange-500/10">
         <CardTitle className="flex items-center gap-3 text-2xl">
-          <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-lg">
             <Key className="w-5 h-5 text-white" />
           </div>
           Bulk Generator Access Key
@@ -59,16 +59,16 @@ export default function BulkGeneratorKeyManager() {
           Manage the access key required for bulk comment generation
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6 relative">
+      <CardContent className="space-y-6 relative pt-6">
         {/* Current Key Status */}
-        <div className="p-5 rounded-xl border-2 bg-gradient-to-br from-accent/20 to-accent/5 border-[oklch(var(--gradient-start)/0.2)]">
+        <div className="p-5 rounded-2xl border-2 bg-gradient-to-br from-blue-500/10 via-teal-500/10 to-orange-500/10 border-blue-200/50 dark:border-blue-800/50">
           <div className="flex items-center justify-between gap-4 mb-3">
             <p className="text-sm font-bold text-muted-foreground uppercase tracking-wide">
               Current Status
             </p>
             <Badge
               variant={isKeySet ? 'default' : 'secondary'}
-              className={`font-semibold ${isKeySet ? 'gradient-bg border-0' : ''}`}
+              className={`font-semibold ${isKeySet ? 'bg-gradient-to-r from-blue-500 to-teal-500 border-0 text-white' : ''}`}
             >
               {isLoadingKey ? 'Loading...' : isKeySet ? 'Key Set' : 'Not Set'}
             </Badge>
@@ -77,7 +77,7 @@ export default function BulkGeneratorKeyManager() {
             <div className="space-y-3">
               <div className="space-y-2">
                 <p className="text-sm font-semibold text-muted-foreground">Masked Key:</p>
-                <p className="text-base font-mono bg-accent/30 px-3 py-2 rounded border border-[oklch(var(--gradient-start)/0.2)]">
+                <p className="text-base font-mono bg-blue-500/10 px-3 py-2 rounded-xl border-2 border-blue-200/50 dark:border-blue-800/50">
                   {currentKey}
                 </p>
               </div>
@@ -87,13 +87,13 @@ export default function BulkGeneratorKeyManager() {
                     variant="outline"
                     size="sm"
                     disabled={isResettingKey}
-                    className="w-full h-10 rounded-xl border-2 border-destructive/30 hover:border-destructive hover:bg-destructive/10"
+                    className="w-full h-10 rounded-xl border-2 border-red-500/30 hover:border-red-500 hover:bg-red-500/10 text-red-600 dark:text-red-400"
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     {isResettingKey ? 'Resetting...' : 'Reset Key'}
                   </Button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="rounded-2xl">
+                <AlertDialogContent className="rounded-3xl">
                   <AlertDialogHeader>
                     <AlertDialogTitle className="text-xl">Reset Bulk Generator Key?</AlertDialogTitle>
                     <AlertDialogDescription className="text-base">
@@ -102,7 +102,7 @@ export default function BulkGeneratorKeyManager() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleResetKey} className="rounded-xl bg-destructive hover:bg-destructive/90">
+                    <AlertDialogAction onClick={handleResetKey} className="rounded-xl bg-red-600 hover:bg-red-700">
                       Reset Key
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -112,7 +112,7 @@ export default function BulkGeneratorKeyManager() {
           )}
           {!isKeySet && (
             <div className="flex items-start gap-2 mt-2">
-              <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
                 No access key has been set. Bulk comment generation will not work until a key is configured.
               </p>
@@ -134,14 +134,14 @@ export default function BulkGeneratorKeyManager() {
                 onChange={(e) => setNewKey(e.target.value)}
                 placeholder="Enter new access key..."
                 disabled={isSettingKey}
-                className="h-12 rounded-xl border-2 text-base pr-12"
+                className="h-12 rounded-2xl border-2 text-base pr-12"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-1 top-1 h-10 w-10 rounded-lg"
+                className="absolute right-1 top-1 h-10 w-10 rounded-xl"
                 disabled={isSettingKey}
               >
                 {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -149,7 +149,7 @@ export default function BulkGeneratorKeyManager() {
             </div>
           </div>
 
-          <div className="p-4 rounded-xl bg-accent/20 border-2 border-[oklch(var(--gradient-start)/0.2)]">
+          <div className="p-4 rounded-2xl bg-blue-500/10 border-2 border-blue-200/50 dark:border-blue-800/50">
             <p className="text-sm text-muted-foreground">
               <strong>Important:</strong> This key will be required by all users attempting to use the bulk comment generator. Keep it secure and share it only with authorized users.
             </p>
@@ -158,7 +158,7 @@ export default function BulkGeneratorKeyManager() {
           <Button
             onClick={handleSetKey}
             disabled={!newKey.trim() || isSettingKey}
-            className="w-full h-12 rounded-xl gradient-bg btn-glow font-bold text-base"
+            className="w-full h-12 rounded-2xl bg-gradient-to-r from-blue-500 to-teal-500 hover:from-blue-600 hover:to-teal-600 text-white shadow-lg hover:shadow-xl font-bold text-base"
           >
             {isSettingKey ? (
               <>

@@ -2,10 +2,71 @@
   "kind": "feature_evidence_report",
   "features": [
     {
-      "featureId": "feature-create-extend-frontend-react-query-hooks-in-the-existing-hooks-pattern-used-by-frontend-src-hooks-usequeries-ts-for-uploading-replacing-the-name-list-fetching-the-list-creating-a-claim-with-upi-id-fetching-claim-status-for-a-name-fetching-admin-claim-queues-approving-rejecting-claims-fetching-totals-and-getting-setting-contact-info-and-limits",
-      "featureTitle": "Create/extend frontend React Query hooks (in the existing hooks pattern used by frontend/src/hooks/useQueries.ts) for: uploading/replacing the name list, fetching the list, creating a claim with UPI ID, fetching claim status for a name, fetching admin claim queues, approving/rejecting claims, fetching totals, and getting/setting contact info and limits.",
+      "featureId": "feature-add-delete-buttons-for-individual-comments-in-the-admin-panel-comment-list-management-section-each-comment-row-should-have-a-delete-icon-button-that-removes-that-specific-comment-from-the-backend-and-updates-the-ui",
+      "featureTitle": "Add delete buttons for individual comments in the Admin Panel comment list management section. Each comment row should have a delete icon/button that removes that specific comment from the backend and updates the UI.",
       "files": [
-        "frontend/src/hooks/useQueries.ts"
+        "frontend/src/pages/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-delete-buttons-for-individual-usernames-in-the-admin-live-list-panel-each-username-entry-should-have-a-delete-icon-button-that-removes-it-from-the-specific-app-event-list",
+      "featureTitle": "Add delete buttons for individual usernames in the Admin Live List Panel. Each username entry should have a delete icon/button that removes it from the specific app/event list.",
+      "files": [
+        "frontend/src/pages/AdminLiveListPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-a-clear-all-button-to-the-admin-panel-that-removes-all-comments-app-events-and-usernames-from-the-system-this-should-be-a-prominent-action-button-with-strong-confirmation",
+      "featureTitle": "Add a Clear All button to the Admin Panel that removes all comments, app events, and usernames from the system. This should be a prominent action button with strong confirmation.",
+      "files": [
+        "frontend/src/pages/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-3"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-one-click-download-feature-in-admin-panel-that-exports-all-data-comments-app-events-usernames-in-both-csv-and-json-formats-the-download-should-bundle-all-data-types-into-separate-files-within-a-single-download-action",
+      "featureTitle": "Implement one-click download feature in Admin Panel that exports all data (comments, app events, usernames) in both CSV and JSON formats. The download should bundle all data types into separate files within a single download action.",
+      "files": [
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend/src/utils/dataExport.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -22,12 +83,12 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-add-a-user-facing-live-list-checker-ui-flow-that-allows-a-user-to-view-instructions-enter-a-name-see-availability-and-if-available-submit-a-claim-by-entering-their-upi-id-the-ui-must-show-clear-feedback-when-a-name-is-already-taken-and-show-the-user-the-status-of-their-submitted-claim-at-least-pending-approved-rejected",
-      "featureTitle": "Add a user-facing ‘Live List Checker’ UI flow that allows a user to: view instructions, enter a name, see availability, and if available submit a claim by entering their UPI ID; the UI must show clear feedback when a name is already taken and show the user the status of their submitted claim (at least pending/approved/rejected).",
+      "featureId": "feature-implement-local-storage-caching-for-comment-lists-app-events-and-usernames-cache-data-locally-on-initial-load-and-subsequent-fetches-serving-from-cache-for-instant-display-while-syncing-with-backend-in-the-background",
+      "featureTitle": "Implement local storage caching for comment lists, app events, and usernames. Cache data locally on initial load and subsequent fetches, serving from cache for instant display while syncing with backend in the background.",
       "files": [
-        "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
-        "frontend/src/components/live-list-checker/statusStyles.ts",
-        "frontend/src/pages/UserView.tsx"
+        "frontend/src/hooks/useAdminLiveListQueries.ts",
+        "frontend/src/hooks/useQueries.ts",
+        "frontend/src/utils/localStorageCache.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -44,11 +105,13 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-extend-the-existing-admin-panel-frontend-src-pages-adminpanel-tsx-with-a-new-section-tab-for-the-live-list-checker-that-supports-uploading-replacing-the-name-list-bulk-text-input-and-or-file-upload-viewing-all-claims-filtering-by-status-approving-rejecting-claims-setting-limits-and-per-claim-amount-viewing-totals-and-editing-contact-info-including-whatsapp-number",
-      "featureTitle": "Extend the existing Admin Panel (frontend/src/pages/AdminPanel.tsx) with a new section/tab for the Live List Checker that supports: uploading/replacing the name list (bulk text input and/or file upload), viewing all claims, filtering by status, approving/rejecting claims, setting limits and per-claim amount, viewing totals, and editing contact info including WhatsApp number.",
+      "featureId": "feature-add-background-music-system-that-auto-plays-when-the-website-opens-respecting-browser-autoplay-policies-with-muted-start-if-needed-include-visible-play-pause-and-volume-control-buttons-accessible-to-all-users",
+      "featureTitle": "Add background music system that auto-plays when the website opens (respecting browser autoplay policies with muted start if needed). Include visible play/pause and volume control buttons accessible to all users.",
       "files": [
-        "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
-        "frontend/src/pages/AdminPanel.tsx"
+        "frontend/src/App.tsx",
+        "frontend/src/components/Header.tsx",
+        "frontend/src/components/MusicControls.tsx",
+        "frontend/src/hooks/useMusicPlayer.ts"
       ],
       "components": [
         "authorization@4.0.0",
@@ -65,12 +128,33 @@
       "confidence": "high"
     },
     {
-      "featureId": "feature-apply-a-coherent-visual-theme-for-the-new-live-list-checker-pages-sections-that-matches-the-existing-app-s-tailwind-shadcn-styling-but-is-distinct-and-consistent-e-g-warm-amber-charcoal-with-card-based-layout-clear-status-badges-and-accessible-form-states-do-not-use-a-blue-purple-primary-theme",
-      "featureTitle": "Apply a coherent visual theme for the new Live List Checker pages/sections that matches the existing app’s Tailwind/Shadcn styling but is distinct and consistent (e.g., ‘warm amber + charcoal’ with card-based layout, clear status badges, and accessible form states). Do not use a blue/purple primary theme.",
+      "featureId": "feature-add-music-upload-and-management-functionality-to-the-admin-panel-admins-can-upload-audio-files-mp3-wav-which-are-stored-in-the-backend-and-served-to-all-users-as-the-background-music-include-options-to-preview-replace-and-remove-the-current-music-file",
+      "featureTitle": "Add music upload and management functionality to the Admin Panel. Admins can upload audio files (MP3, WAV) which are stored in the backend and served to all users as the background music. Include options to preview, replace, and remove the current music file.",
       "files": [
-        "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
-        "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
-        "frontend/src/index.css"
+        "frontend/src/components/AdminMusicManager.tsx",
+        "frontend/src/hooks/useMusicPlayer.ts",
+        "frontend/src/pages/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-7"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-replace-the-existing-interactive3dcube-component-with-a-lightweight-top-down-shooter-mini-game-using-html5-canvas-or-react-three-fiber-the-game-should-feature-player-controlled-character-movement-wasd-or-arrow-keys-shooting-mechanics-mouse-click-or-spacebar-and-enemy-waves-that-spawn-and-move-toward-the-player-keep-gameplay-simple-engaging-and-performant",
+      "featureTitle": "Replace the existing Interactive3DCube component with a lightweight top-down shooter mini-game using HTML5 Canvas or React Three Fiber. The game should feature player-controlled character movement (WASD or arrow keys), shooting mechanics (mouse click or spacebar), and enemy waves that spawn and move toward the player. Keep gameplay simple, engaging, and performant.",
+      "files": [
+        "frontend/src/components/TopDownShooterGame.tsx",
+        "frontend/src/pages/UserView.tsx"
       ],
       "components": [
         "authorization@4.0.0",
@@ -83,6 +167,29 @@
       ],
       "testIds": [
         "REQ-8"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-maintain-secure-data-handling-for-all-new-features-including-music-uploads-game-state-and-admin-operations-ensure-admin-access-code-protection-5676-remains-enforced-for-sensitive-operations",
+      "featureTitle": "Maintain secure data handling for all new features including music uploads, game state, and admin operations. Ensure admin access code protection (5676) remains enforced for sensitive operations.",
+      "files": [
+        "frontend/src/components/AdminMusicManager.tsx",
+        "frontend/src/pages/AdminLiveListPanel.tsx",
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend/src/utils/dataExport.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-9"
       ],
       "confidence": "high"
     }

@@ -3,13 +3,14 @@ import { useActor } from './useActor';
 import { toast } from 'sonner';
 import type { Comment, CommentListId, CommentId, RatingImageMetadata, Message, MessageId } from '../backend';
 import { ExternalBlob } from '../backend';
-import { ADMIN_ACCESS_CODE } from '../utils/adminPinSession';
-import type { ClaimRecord, ClaimId, LiveListSettings, LiveListTotals, ContactInfo, LiveListCheckerBackend } from '../types/liveListChecker';
 
+const ADMIN_ACCESS_CODE = '5676';
+
+// Comment List Management
 export function useGetCommentListIds() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<CommentListId[]>({
+  return useQuery<string[]>({
     queryKey: ['commentListIds'],
     queryFn: async () => {
       if (!actor) return [];
@@ -23,7 +24,7 @@ export function useGetCommentListIds() {
 export function useGetLockedCommentListIds() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<CommentListId[]>({
+  return useQuery<string[]>({
     queryKey: ['lockedCommentListIds'],
     queryFn: async () => {
       if (!actor) return [];
@@ -31,7 +32,6 @@ export function useGetLockedCommentListIds() {
     },
     enabled: !!actor && !isFetching,
     staleTime: 10000,
-    refetchInterval: 15000,
   });
 }
 
@@ -45,7 +45,7 @@ export function useGetCommentList(listId: string | null) {
       return actor.getCommentList(ADMIN_ACCESS_CODE, listId);
     },
     enabled: !!actor && !isFetching && !!listId,
-    staleTime: 20000,
+    staleTime: 30000,
   });
 }
 
@@ -55,18 +55,18 @@ export function useGetRemainingCount(listId: string | null) {
   return useQuery<bigint>({
     queryKey: ['remainingCount', listId],
     queryFn: async () => {
-      if (!actor || !listId) return BigInt(0);
+      if (!actor || !listId) return 0n;
       return actor.getRemainingCount(listId);
     },
     enabled: !!actor && !isFetching && !!listId,
-    staleTime: 15000,
+    staleTime: 10000,
   });
 }
 
 export function useGetAllBulkCommentTotals() {
   const { actor, isFetching } = useActor();
 
-  return useQuery<[CommentListId, bigint][]>({
+  return useQuery<Array<[CommentListId, bigint]>>({
     queryKey: ['allBulkCommentTotals'],
     queryFn: async () => {
       if (!actor) return [];
@@ -82,17 +82,17 @@ export function useCreateCommentList() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (listId: CommentListId) => {
+    mutationFn: async (listId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.createCommentList(ADMIN_ACCESS_CODE, listId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commentListIds'] });
       queryClient.invalidateQueries({ queryKey: ['allBulkCommentTotals'] });
-      toast.success('Comment list created successfully');
+      toast.success('Comment list created successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to create comment list');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to create comment list');
     },
   });
 }
@@ -102,18 +102,17 @@ export function useAddComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ listId, id, content }: { listId: CommentListId; id: CommentId; content: string }) => {
+    mutationFn: async ({ listId, id, content }: { listId: string; id: string; content: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.addComment(ADMIN_ACCESS_CODE, listId, id, content);
     },
-    onSuccess: (_, { listId }) => {
-      queryClient.invalidateQueries({ queryKey: ['commentList', listId] });
-      queryClient.invalidateQueries({ queryKey: ['remainingCount', listId] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['commentList', variables.listId] });
       queryClient.invalidateQueries({ queryKey: ['allBulkCommentTotals'] });
-      toast.success('Comment added successfully');
+      queryClient.invalidateQueries({ queryKey: ['remainingCount', variables.listId] });
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to add comment');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to add comment');
     },
   });
 }
@@ -123,38 +122,18 @@ export function useRemoveComment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ listId, commentId }: { listId: CommentListId; commentId: CommentId }) => {
+    mutationFn: async ({ listId, commentId }: { listId: string; commentId: string }) => {
       if (!actor) throw new Error('Actor not available');
       return actor.removeComment(ADMIN_ACCESS_CODE, listId, commentId);
     },
-    onSuccess: (_, { listId }) => {
-      queryClient.invalidateQueries({ queryKey: ['commentList', listId] });
-      queryClient.invalidateQueries({ queryKey: ['remainingCount', listId] });
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['commentList', variables.listId] });
       queryClient.invalidateQueries({ queryKey: ['allBulkCommentTotals'] });
-      toast.success('Comment removed successfully');
+      queryClient.invalidateQueries({ queryKey: ['remainingCount', variables.listId] });
+      toast.success('Comment deleted successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to remove comment');
-    },
-  });
-}
-
-export function useResetCommentList() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (listId: CommentListId) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.resetCommentList(ADMIN_ACCESS_CODE, listId);
-    },
-    onSuccess: (_, listId) => {
-      queryClient.invalidateQueries({ queryKey: ['commentList', listId] });
-      queryClient.invalidateQueries({ queryKey: ['remainingCount', listId] });
-      toast.success('Comment list reset successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to reset comment list');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete comment');
     },
   });
 }
@@ -164,59 +143,18 @@ export function useDeleteCommentList() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (listId: CommentListId) => {
+    mutationFn: async (listId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.deleteCommentList(ADMIN_ACCESS_CODE, listId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['commentListIds'] });
+      queryClient.invalidateQueries({ queryKey: ['commentList'] });
       queryClient.invalidateQueries({ queryKey: ['allBulkCommentTotals'] });
-      queryClient.invalidateQueries({ queryKey: ['lockedCommentListIds'] });
-      toast.success('Comment list deleted successfully');
+      toast.success('Comment list deleted successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to delete comment list');
-    },
-  });
-}
-
-export function useClearAllCommentLists() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.clearAllCommentLists(ADMIN_ACCESS_CODE);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['commentListIds'] });
-      queryClient.invalidateQueries({ queryKey: ['allBulkCommentTotals'] });
-      queryClient.invalidateQueries({ queryKey: ['lockedCommentListIds'] });
-      toast.success('All comment lists cleared successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to clear comment lists');
-    },
-  });
-}
-
-export function useGenerateBulkComments() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ listId, count, bulkGeneratorKey }: { listId: CommentListId; count: number; bulkGeneratorKey: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.generateBulkComments(bulkGeneratorKey, listId, BigInt(count));
-    },
-    onSuccess: (comments, { listId }) => {
-      queryClient.invalidateQueries({ queryKey: ['remainingCount', listId] });
-      queryClient.invalidateQueries({ queryKey: ['commentList', listId] });
-      toast.success(`Generated ${comments.length} comment(s) successfully`);
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to generate comments');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete comment list');
     },
   });
 }
@@ -226,16 +164,16 @@ export function useLockCommentList() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (listId: CommentListId) => {
+    mutationFn: async (listId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.lockCommentList(ADMIN_ACCESS_CODE, listId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lockedCommentListIds'] });
-      toast.success('Comment list locked successfully');
+      toast.success('Comment list locked successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to lock comment list');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to lock comment list');
     },
   });
 }
@@ -245,116 +183,77 @@ export function useUnlockCommentList() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (listId: CommentListId) => {
+    mutationFn: async (listId: string) => {
       if (!actor) throw new Error('Actor not available');
       return actor.unlockCommentList(ADMIN_ACCESS_CODE, listId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lockedCommentListIds'] });
-      toast.success('Comment list unlocked successfully');
+      toast.success('Comment list unlocked successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to unlock comment list');
-    },
-  });
-}
-
-export function useUploadRatingImage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ userName, image }: { userName: string; image: ExternalBlob }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.uploadRatingImage(ADMIN_ACCESS_CODE, userName, image);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUserRatingImages'] });
-      queryClient.invalidateQueries({ queryKey: ['totalUserRatingCount'] });
-      toast.success('Rating image uploaded successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to upload rating image');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to unlock comment list');
     },
   });
 }
 
-export function useGetAllUserRatingImages() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<[string, RatingImageMetadata[]][]>({
-    queryKey: ['allUserRatingImages'],
-    queryFn: async () => {
-      if (!actor) return [];
-      return actor.getAllUserRatingImages(ADMIN_ACCESS_CODE);
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 30000,
-  });
-}
-
-export function useGetTotalUserRatingCount() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<bigint>({
-    queryKey: ['totalUserRatingCount'],
-    queryFn: async () => {
-      if (!actor) return BigInt(0);
-      return actor.getTotalUserRatingCount(ADMIN_ACCESS_CODE);
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 30000,
-  });
-}
-
-export function useRemoveRatingImage() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ userName, imageId }: { userName: string; imageId: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      return actor.removeRatingImage(ADMIN_ACCESS_CODE, userName, imageId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUserRatingImages'] });
-      queryClient.invalidateQueries({ queryKey: ['totalUserRatingCount'] });
-      toast.success('Rating image removed successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to remove rating image');
-    },
-  });
-}
-
-export function useRemoveAllUserRatingImages() {
+export function useClearEverything() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       if (!actor) throw new Error('Actor not available');
-      return actor.removeAllUserRatingImages(ADMIN_ACCESS_CODE);
+      return actor.clearEverything(ADMIN_ACCESS_CODE);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allUserRatingImages'] });
-      queryClient.invalidateQueries({ queryKey: ['totalUserRatingCount'] });
-      toast.success('All rating images removed successfully');
+      queryClient.clear();
+      toast.success('All data cleared successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to remove all rating images');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to clear data');
     },
   });
 }
 
-export function useGetBulkGeneratorKey(masked: boolean = true) {
+// Bulk Comment Generation
+export function useGenerateBulkComments() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      listId,
+      count,
+      bulkGeneratorKey,
+    }: {
+      listId: string;
+      count: number;
+      bulkGeneratorKey: string;
+    }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.generateBulkComments(bulkGeneratorKey, listId, BigInt(count));
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['remainingCount', variables.listId] });
+      queryClient.invalidateQueries({ queryKey: ['commentList', variables.listId] });
+      toast.success('Bulk comments generated successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to generate bulk comments');
+    },
+  });
+}
+
+// Bulk Generator Key Management
+export function useGetBulkGeneratorKey() {
   const { actor, isFetching } = useActor();
 
   return useQuery<string | null>({
-    queryKey: ['bulkGeneratorKey', masked],
+    queryKey: ['bulkGeneratorKey'],
     queryFn: async () => {
       if (!actor) return null;
-      return actor.getBulkGeneratorKey(ADMIN_ACCESS_CODE, masked);
+      return actor.getBulkGeneratorKey(ADMIN_ACCESS_CODE, true);
     },
     enabled: !!actor && !isFetching,
     staleTime: 60000,
@@ -372,10 +271,10 @@ export function useSetBulkGeneratorKey() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bulkGeneratorKey'] });
-      toast.success('Bulk generator key updated successfully');
+      toast.success('Bulk generator key updated successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to update bulk generator key');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to update key');
     },
   });
 }
@@ -391,14 +290,68 @@ export function useResetBulkGeneratorKey() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['bulkGeneratorKey'] });
-      toast.success('Bulk generator key reset successfully');
+      toast.success('Bulk generator key reset successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to reset bulk generator key');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to reset key');
     },
   });
 }
 
+// Rating Images
+export function useGetAllUserRatingImages() {
+  const { actor, isFetching } = useActor();
+
+  return useQuery<Array<[string, RatingImageMetadata[]]>>({
+    queryKey: ['allUserRatingImages'],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getAllUserRatingImages(ADMIN_ACCESS_CODE);
+    },
+    enabled: !!actor && !isFetching,
+    staleTime: 30000,
+  });
+}
+
+export function useUploadRatingImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userName, image }: { userName: string; image: ExternalBlob }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.uploadRatingImage(ADMIN_ACCESS_CODE, userName, image);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUserRatingImages'] });
+      toast.success('Image uploaded successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to upload image');
+    },
+  });
+}
+
+export function useRemoveRatingImage() {
+  const { actor } = useActor();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ userName, imageId }: { userName: string; imageId: string }) => {
+      if (!actor) throw new Error('Actor not available');
+      return actor.removeRatingImage(ADMIN_ACCESS_CODE, userName, imageId);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allUserRatingImages'] });
+      toast.success('Image removed successfully!');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to remove image');
+    },
+  });
+}
+
+// Messages
 export function useGetAllMessages() {
   const { actor, isFetching } = useActor();
 
@@ -409,7 +362,6 @@ export function useGetAllMessages() {
       return actor.getAllMessages(ADMIN_ACCESS_CODE);
     },
     enabled: !!actor && !isFetching,
-    staleTime: 5000,
     refetchInterval: 10000,
   });
 }
@@ -425,259 +377,29 @@ export function useReplyMessage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allMessages'] });
-      toast.success('Reply sent successfully');
+      toast.success('Reply sent successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to send reply');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to send reply');
     },
   });
 }
 
-// ==================== Live List Checker Hooks ====================
-
-export function useUploadNameList() {
+export function useDeleteMessage() {
   const { actor } = useActor();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (names: string[]) => {
+    mutationFn: async (messageId: MessageId) => {
       if (!actor) throw new Error('Actor not available');
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.uploadNameList(ADMIN_ACCESS_CODE, names);
+      return actor.deleteMessage(ADMIN_ACCESS_CODE, messageId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activeNameList'] });
-      queryClient.invalidateQueries({ queryKey: ['liveListTotals'] });
-      toast.success('Name list uploaded successfully');
+      queryClient.invalidateQueries({ queryKey: ['allMessages'] });
+      toast.success('Message deleted successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to upload name list');
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete message');
     },
-  });
-}
-
-export function useGetActiveNameList() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<string[]>({
-    queryKey: ['activeNameList'],
-    queryFn: async () => {
-      if (!actor) return [];
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.getActiveNameList();
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 30000,
-  });
-}
-
-export function useCheckNameAvailability(name: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<boolean>({
-    queryKey: ['nameAvailability', name],
-    queryFn: async () => {
-      if (!actor || !name) return false;
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.checkNameAvailability(name);
-    },
-    enabled: !!actor && !isFetching && !!name,
-    staleTime: 10000,
-  });
-}
-
-export function useCreateClaim() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ name, upiId }: { name: string; upiId: string }) => {
-      if (!actor) throw new Error('Actor not available');
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.createClaim(name, upiId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['claimStatus'] });
-      queryClient.invalidateQueries({ queryKey: ['nameAvailability'] });
-      queryClient.invalidateQueries({ queryKey: ['allClaims'] });
-      queryClient.invalidateQueries({ queryKey: ['liveListTotals'] });
-      toast.success('Claim submitted successfully');
-    },
-    onError: (error: any) => {
-      const message = error?.message || 'Failed to create claim';
-      if (message.includes('already claimed') || message.includes('already taken')) {
-        toast.error('This name has already been claimed');
-      } else if (message.includes('limit')) {
-        toast.error('Claim limit reached');
-      } else {
-        toast.error(message);
-      }
-    },
-  });
-}
-
-export function useGetClaimStatus(name: string) {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ClaimRecord | null>({
-    queryKey: ['claimStatus', name],
-    queryFn: async () => {
-      if (!actor || !name) return null;
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.getClaimStatus(name);
-    },
-    enabled: !!actor && !isFetching && !!name,
-    staleTime: 10000,
-  });
-}
-
-export function useGetAllClaims() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ClaimRecord[]>({
-    queryKey: ['allClaims'],
-    queryFn: async () => {
-      if (!actor) return [];
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.getAllClaims(ADMIN_ACCESS_CODE);
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 15000,
-  });
-}
-
-export function useApproveClaim() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (claimId: ClaimId) => {
-      if (!actor) throw new Error('Actor not available');
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.approveClaim(ADMIN_ACCESS_CODE, claimId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allClaims'] });
-      queryClient.invalidateQueries({ queryKey: ['liveListTotals'] });
-      queryClient.invalidateQueries({ queryKey: ['claimStatus'] });
-      toast.success('Claim approved successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to approve claim');
-    },
-  });
-}
-
-export function useRejectClaim() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (claimId: ClaimId) => {
-      if (!actor) throw new Error('Actor not available');
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.rejectClaim(ADMIN_ACCESS_CODE, claimId);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allClaims'] });
-      queryClient.invalidateQueries({ queryKey: ['liveListTotals'] });
-      queryClient.invalidateQueries({ queryKey: ['claimStatus'] });
-      toast.success('Claim rejected successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to reject claim');
-    },
-  });
-}
-
-export function useGetLiveListTotals() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<LiveListTotals>({
-    queryKey: ['liveListTotals'],
-    queryFn: async () => {
-      if (!actor) return {
-        pendingCount: BigInt(0),
-        approvedCount: BigInt(0),
-        rejectedCount: BigInt(0),
-        pendingTotalAmount: BigInt(0),
-        approvedTotalAmount: BigInt(0),
-      };
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.getLiveListTotals(ADMIN_ACCESS_CODE);
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 15000,
-  });
-}
-
-export function useSetLiveListSettings() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (settings: LiveListSettings) => {
-      if (!actor) throw new Error('Actor not available');
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.setLiveListSettings(ADMIN_ACCESS_CODE, settings);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liveListSettings'] });
-      queryClient.invalidateQueries({ queryKey: ['liveListTotals'] });
-      toast.success('Settings updated successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to update settings');
-    },
-  });
-}
-
-export function useGetLiveListSettings() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<LiveListSettings>({
-    queryKey: ['liveListSettings'],
-    queryFn: async () => {
-      if (!actor) return { maxClaims: BigInt(0), perClaimAmount: BigInt(0) };
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.getLiveListSettings(ADMIN_ACCESS_CODE);
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 30000,
-  });
-}
-
-export function useSetContactInfo() {
-  const { actor } = useActor();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (info: ContactInfo) => {
-      if (!actor) throw new Error('Actor not available');
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.setContactInfo(ADMIN_ACCESS_CODE, info);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contactInfo'] });
-      toast.success('Contact info updated successfully');
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Failed to update contact info');
-    },
-  });
-}
-
-export function useGetContactInfo() {
-  const { actor, isFetching } = useActor();
-
-  return useQuery<ContactInfo>({
-    queryKey: ['contactInfo'],
-    queryFn: async () => {
-      if (!actor) return { whatsappNumber: '', email: '', additionalInfo: '' };
-      const extendedActor = actor as any as LiveListCheckerBackend;
-      return extendedActor.getContactInfo();
-    },
-    enabled: !!actor && !isFetching,
-    staleTime: 60000,
   });
 }

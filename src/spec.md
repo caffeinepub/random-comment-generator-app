@@ -1,15 +1,16 @@
 # Specification
 
 ## Summary
-**Goal:** Add a Live List Checker feature where admins manage a name list, claims, limits/totals, and public contact info, and users can check/claim names with UPI ID and track claim status.
+**Goal:** Add admin controls for deleting comments/usernames and clearing all data, implement local storage caching for faster load times, add background music system with admin upload management, and replace the 3D cube with a top-down shooter game.
 
 **Planned changes:**
-- Add backend models and APIs to store/manage an admin-provided name list, create and track name claims (available/pending/approved/rejected), prevent duplicate claims, and record claimant identifier, timestamp, and UPI ID.
-- Add backend admin settings for claim limits and per-claim amount, enforce limits during claim creation, and expose computed totals derived from claims.
-- Add backend storage and APIs for admin-managed public contact info (including WhatsApp number) and ensure all new state survives upgrades via migration handling.
-- Extend frontend React Query hooks (following existing patterns) for all Live List Checker operations: list upload/fetch, claim creation/status lookup, admin claim queue + approve/reject, limits/totals, and contact info get/set.
-- Add a user-facing Live List Checker UI to enter a name, see availability, submit a claim with required UPI ID, view clear “taken” errors, and see claim status plus displayed contact info.
-- Extend the Admin Panel with a Live List Checker section to upload/replace the list, view/filter claims, approve/reject, set limits and per-claim amount, view totals, and edit contact info.
-- Apply a distinct but consistent Tailwind/Shadcn visual theme for this feature (not blue/purple), with clear status badges and accessible English messaging.
+- Add delete buttons for individual comments and usernames in Admin Panel
+- Add Clear All button to remove all data with confirmation
+- Add one-click download feature for exporting all data as CSV and JSON
+- Implement local storage caching for instant list loading with background sync
+- Add auto-play background music with play/pause and volume controls
+- Add music upload and management in Admin Panel
+- Replace Interactive3DCube component with a top-down shooter game featuring player movement, shooting mechanics, and enemy waves
+- Maintain secure admin access code validation for all sensitive operations
 
-**User-visible outcome:** Users can check a name’s availability, submit a claim with their UPI ID, and track status; admins can manage the name list, review and approve/reject claims, configure limits and per-claim amount, view totals, and update public contact info (including WhatsApp number).
+**User-visible outcome:** Admins can delete individual items or clear all data, download complete data exports, and manage background music. All users experience faster page loads through caching, hear background music with playback controls, and can play an engaging top-down shooter game where the 3D cube previously displayed.

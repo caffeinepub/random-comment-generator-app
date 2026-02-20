@@ -11,15 +11,19 @@ import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
 import MixinAuthorization "authorization/MixinAuthorization";
+import Migration "migration";
 
+(with migration = Migration.run)
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
 
+  // Types
   type CommentId = Text;
   type CommentListId = Text;
   type RatingImageId = Text;
   type MessageId = Text;
+  type AppEventId = Text;
 
   type Comment = {
     id : CommentId;
@@ -56,13 +60,13 @@ actor {
     isRead : Bool;
   };
 
-  module Comment {
-    public func compare(comment1 : Comment, comment2 : Comment) : Order.Order {
-      Text.compare(comment1.id, comment2.id);
-    };
+  public type AppEvent = {
+    id : AppEventId;
+    name : Text;
+    usernames : [Text];
+    createdAt : Time.Time;
   };
 
-  // Bulk Generation Log Entry
   type BulkGenLog = {
     id : Text;
     user : Principal.Principal;
@@ -79,7 +83,6 @@ actor {
   let lockedCommentLists = Map.empty<CommentListId, Bool>();
   var lockedCommentListIds = List.empty<CommentListId>();
 
-  // User Profile Storage (keyed by Principal for proper authorization)
   let userProfiles = Map.empty<Principal.Principal, UserProfile>();
   let walletBalances = Map.empty<Principal.Principal, Nat>();
   let paymentRecords = Map.empty<Principal.Principal, List.List<PaymentRecord>>();
@@ -98,7 +101,6 @@ actor {
     timestamp : Time.Time;
   };
 
-  // Password storage (hashed + salted)
   type PasswordEntry = {
     hash : Text;
     salt : Text;
@@ -106,22 +108,18 @@ actor {
 
   let passwordStore = Map.empty<Text, PasswordEntry>();
 
-  // Session storage (session token -> Principal)
   type SessionToken = Text;
   let activeSessions = Map.empty<SessionToken, Principal.Principal>();
   var lastResetTimestamp : Time.Time = 0;
 
   let nonAuthAccessCode = "5676";
 
-  // User Comment History Storage (per device)
   public type DeviceId = Text;
   let userCommentHistory = Map.empty<
     Principal.Principal,
     Map.Map<DeviceId, Map.Map<CommentListId, Bool>>
   >();
 
-  // Single Comment Generator History
-  // principal -> deviceId -> listId -> generated (true=exists)
   let singleCommentHistory = Map.empty<
     Principal.Principal,
     Map.Map<DeviceId, Map.Map<CommentListId, Bool>>
@@ -129,6 +127,9 @@ actor {
 
   var bulkGeneratorKey : ?Text = null;
   include MixinStorage();
+
+  let appEvents = Map.empty<AppEventId, AppEvent>();
+  var appEventCounter = 0;
 
   func assertAdminAccessWithCode(caller : Principal.Principal, accessCode : Text) {
     let isValidCode = accessCode == nonAuthAccessCode;
@@ -278,6 +279,134 @@ actor {
       }
     );
   };
+
+  // ================== Apps/Events Live List Management (Admin Only) =====================
+
+  public shared ({ caller }) func createAppEvent(accessCode : Text, name : Text) : async AppEventId {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    appEventCounter += 1;
+    let appEventId = "appevent_" # appEventCounter.toText();
+    let appEvent : AppEvent = {
+      id = appEventId;
+      name;
+      usernames = [];
+      createdAt = Time.now();
+    };
+    appEvents.add(appEventId, appEvent);
+    appEventId;
+  };
+
+  public shared ({ caller }) func addUsernameToAppEvent(accessCode : Text, appEventId : AppEventId, username : Text) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    switch (appEvents.get(appEventId)) {
+      case (null) { Runtime.trap("App/Event not found") };
+      case (?appEvent) {
+        let currentUsernames = appEvent.usernames;
+        let alreadyExists = currentUsernames.any(func(u) { u == username });
+        if (not alreadyExists) {
+          let updatedUsernames = currentUsernames.concat([username]);
+          let updatedAppEvent = { appEvent with usernames = updatedUsernames };
+          appEvents.add(appEventId, updatedAppEvent);
+        };
+      };
+    };
+  };
+
+  public shared ({ caller }) func addUsernamesToAppEvent(accessCode : Text, appEventId : AppEventId, usernames : [Text]) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    switch (appEvents.get(appEventId)) {
+      case (null) { Runtime.trap("App/Event not found") };
+      case (?appEvent) {
+        let currentUsernames = appEvent.usernames;
+        var updatedUsernames = currentUsernames;
+
+        for (username in usernames.vals()) {
+          let alreadyExists = updatedUsernames.any(func(u) { u == username });
+          if (not alreadyExists) {
+            updatedUsernames := updatedUsernames.concat([username]);
+          };
+        };
+
+        let updatedAppEvent = { appEvent with usernames = updatedUsernames };
+        appEvents.add(appEventId, updatedAppEvent);
+      };
+    };
+  };
+
+  public shared ({ caller }) func removeUsernameFromAppEvent(accessCode : Text, appEventId : AppEventId, username : Text) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    switch (appEvents.get(appEventId)) {
+      case (null) { Runtime.trap("App/Event not found") };
+      case (?appEvent) {
+        let updatedUsernames = appEvent.usernames.filter(func(u) { u != username });
+        let updatedAppEvent = { appEvent with usernames = updatedUsernames };
+        appEvents.add(appEventId, updatedAppEvent);
+      };
+    };
+  };
+
+  public shared ({ caller }) func resetAppEventUsernames(accessCode : Text, appEventId : AppEventId) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    switch (appEvents.get(appEventId)) {
+      case (null) { Runtime.trap("App/Event not found") };
+      case (?appEvent) {
+        let updatedAppEvent = { appEvent with usernames = [] };
+        appEvents.add(appEventId, updatedAppEvent);
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteAppEvent(accessCode : Text, appEventId : AppEventId) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    if (not appEvents.containsKey(appEventId)) {
+      Runtime.trap("App/Event not found");
+    };
+    appEvents.remove(appEventId);
+  };
+
+  public query ({ caller }) func getAppEvent(accessCode : Text, appEventId : AppEventId) : async ?AppEvent {
+    assertAdminAccessWithCode(caller, accessCode);
+    appEvents.get(appEventId);
+  };
+
+  public query ({ caller }) func getAllAppEvents(accessCode : Text) : async [AppEvent] {
+    assertAdminAccessWithCode(caller, accessCode);
+    appEvents.values().toArray();
+  };
+
+  // ================== Live List Checker (Public - Any User) =====================
+
+  public query func getAppEventIds() : async [(AppEventId, Text)] {
+    // Public access - any user can see available apps/events for checking
+    appEvents.entries().toArray().map<(AppEventId, AppEvent), (AppEventId, Text)>(
+      func((id, appEvent)) {
+        (id, appEvent.name);
+      }
+    );
+  };
+
+  public query func checkUsernamesInAppEvent(appEventId : AppEventId, usernamesToCheck : [Text]) : async [(Text, Bool)] {
+    // Public access - any user can check if usernames exist
+    switch (appEvents.get(appEventId)) {
+      case (null) { [] };
+      case (?appEvent) {
+        usernamesToCheck.map<Text, (Text, Bool)>(
+          func(username) {
+            let exists = appEvent.usernames.any(func(u) { u == username });
+            (username, exists);
+          }
+        );
+      };
+    };
+  };
+
+  // ================== Comment List Management =====================
 
   public shared ({ caller }) func createCommentList(accessCode : Text, listId : CommentListId) : async () {
     assertAdminAccessWithCode(caller, accessCode);
@@ -493,7 +622,7 @@ actor {
     selected;
   };
 
-  // ================== New Single Comment Generation Functions =====================
+  // ================== Single Comment Generation =====================
 
   public query ({ caller }) func hasSingleCommentGenerated(deviceId : DeviceId, listId : CommentListId) : async Bool {
     switch (singleCommentHistory.get(caller)) {
@@ -584,9 +713,6 @@ actor {
     ?firstComment;
   };
 
-  // ================== RV Rating Images System (Admin-Only) =====================
-
-  // Maps user names to lists of rating images (RV images)
   let userRatingImages = Map.empty<Text, List.List<RatingImageMetadata>>();
   var ratingImageCounter = 0;
 
@@ -602,7 +728,6 @@ actor {
       image;
     };
 
-    // Add to the corresponding user's list
     let currentList = switch (userRatingImages.get(userName)) {
       case (null) { List.empty<RatingImageMetadata>() };
       case (?existing) { existing };
@@ -669,8 +794,6 @@ actor {
     userRatingImages.clear();
   };
 
-  // ================== Messaging System =====================
-
   let messages = Map.empty<MessageId, Message>();
   var messageCounter = 0;
 
@@ -713,10 +836,43 @@ actor {
     messages.values().toArray();
   };
 
+  public shared ({ caller }) func deleteMessage(accessCode : Text, messageId : MessageId) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    if (not messages.containsKey(messageId)) {
+      Runtime.trap("Message not found");
+    };
+    messages.remove(messageId);
+  };
+
   public query ({ caller }) func getMessages() : async [Message] {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can view messages");
     };
+
+    // Users can only see their own messages and admin replies
     messages.values().toArray();
+  };
+
+  // ================= Delete Everything Functionality =====================
+
+  public shared ({ caller }) func clearEverything(accessCode : Text) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+    // Clear persistent storage
+    commentLists.clear();
+    commentListIds.clear();
+    bulkGenLogs.clear();
+    lockedCommentLists.clear();
+    lockedCommentListIds.clear();
+    userProfiles.clear();
+    walletBalances.clear();
+    paymentRecords.clear();
+    passwordStore.clear();
+    activeSessions.clear();
+    appEvents.clear();
+    singleCommentHistory.clear();
+    messages.clear();
+    userRatingImages.clear();
+    bulkGeneratorKey := null;
   };
 };

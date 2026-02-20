@@ -10,6 +10,13 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AppEvent {
+  'id' : AppEventId,
+  'name' : string,
+  'createdAt' : Time,
+  'usernames' : Array<string>,
+}
+export type AppEventId = string;
 export interface Comment {
   'id' : CommentId,
   'content' : string,
@@ -92,10 +99,26 @@ export interface _SERVICE {
     undefined
   >,
   'addFundsToWallet' : ActorMethod<[string, Principal, bigint], undefined>,
+  'addUsernameToAppEvent' : ActorMethod<
+    [string, AppEventId, string],
+    undefined
+  >,
+  'addUsernamesToAppEvent' : ActorMethod<
+    [string, AppEventId, Array<string>],
+    undefined
+  >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'checkUsernamesInAppEvent' : ActorMethod<
+    [AppEventId, Array<string>],
+    Array<[string, boolean]>
+  >,
   'clearAllCommentLists' : ActorMethod<[string], undefined>,
+  'clearEverything' : ActorMethod<[string], undefined>,
+  'createAppEvent' : ActorMethod<[string, string], AppEventId>,
   'createCommentList' : ActorMethod<[string, CommentListId], undefined>,
+  'deleteAppEvent' : ActorMethod<[string, AppEventId], undefined>,
   'deleteCommentList' : ActorMethod<[string, CommentListId], undefined>,
+  'deleteMessage' : ActorMethod<[string, MessageId], undefined>,
   'downloadAllRatingImages' : ActorMethod<[string], Array<RatingImageMetadata>>,
   'generateBulkComments' : ActorMethod<
     [string, CommentListId, bigint],
@@ -105,6 +128,7 @@ export interface _SERVICE {
     [CommentListId, DeviceId],
     [] | [string]
   >,
+  'getAllAppEvents' : ActorMethod<[string], Array<AppEvent>>,
   'getAllBulkCommentTotals' : ActorMethod<
     [string],
     Array<[CommentListId, bigint]>
@@ -118,6 +142,8 @@ export interface _SERVICE {
     [string],
     Array<[string, Array<RatingImageMetadata>]>
   >,
+  'getAppEvent' : ActorMethod<[string, AppEventId], [] | [AppEvent]>,
+  'getAppEventIds' : ActorMethod<[], Array<[AppEventId, string]>>,
   'getAvailableComments' : ActorMethod<[CommentListId], [] | [Array<Comment>]>,
   'getBulkGeneratorKey' : ActorMethod<[string, boolean], [] | [string]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
@@ -145,7 +171,12 @@ export interface _SERVICE {
   'removeAllUserRatingImages' : ActorMethod<[string], undefined>,
   'removeComment' : ActorMethod<[string, CommentListId, CommentId], undefined>,
   'removeRatingImage' : ActorMethod<[string, string, string], undefined>,
+  'removeUsernameFromAppEvent' : ActorMethod<
+    [string, AppEventId, string],
+    undefined
+  >,
   'replyMessage' : ActorMethod<[string, string], MessageId>,
+  'resetAppEventUsernames' : ActorMethod<[string, AppEventId], undefined>,
   'resetBulkGeneratorKey' : ActorMethod<[string], undefined>,
   'resetCommentList' : ActorMethod<[string, CommentListId], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,

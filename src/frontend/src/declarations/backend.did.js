@@ -22,11 +22,13 @@ export const _CaffeineStorageRefillResult = IDL.Record({
 export const CommentListId = IDL.Text;
 export const CommentId = IDL.Text;
 export const Principal = IDL.Principal;
+export const AppEventId = IDL.Text;
 export const UserRole = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const MessageId = IDL.Text;
 export const RatingImageId = IDL.Text;
 export const Time = IDL.Int;
 export const ExternalBlob = IDL.Vec(IDL.Nat8);
@@ -44,7 +46,12 @@ export const Comment = IDL.Record({
   'timestamp' : Time,
 });
 export const DeviceId = IDL.Text;
-export const MessageId = IDL.Text;
+export const AppEvent = IDL.Record({
+  'id' : AppEventId,
+  'name' : IDL.Text,
+  'createdAt' : Time,
+  'usernames' : IDL.Vec(IDL.Text),
+});
 export const MessageSide = IDL.Variant({
   'admin' : IDL.Null,
   'user' : IDL.Null,
@@ -109,10 +116,25 @@ export const idlService = IDL.Service({
       [],
     ),
   'addFundsToWallet' : IDL.Func([IDL.Text, Principal, IDL.Nat], [], []),
+  'addUsernameToAppEvent' : IDL.Func([IDL.Text, AppEventId, IDL.Text], [], []),
+  'addUsernamesToAppEvent' : IDL.Func(
+      [IDL.Text, AppEventId, IDL.Vec(IDL.Text)],
+      [],
+      [],
+    ),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'checkUsernamesInAppEvent' : IDL.Func(
+      [AppEventId, IDL.Vec(IDL.Text)],
+      [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))],
+      ['query'],
+    ),
   'clearAllCommentLists' : IDL.Func([IDL.Text], [], []),
+  'clearEverything' : IDL.Func([IDL.Text], [], []),
+  'createAppEvent' : IDL.Func([IDL.Text, IDL.Text], [AppEventId], []),
   'createCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+  'deleteAppEvent' : IDL.Func([IDL.Text, AppEventId], [], []),
   'deleteCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+  'deleteMessage' : IDL.Func([IDL.Text, MessageId], [], []),
   'downloadAllRatingImages' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(RatingImageMetadata)],
@@ -128,6 +150,7 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Text)],
       [],
     ),
+  'getAllAppEvents' : IDL.Func([IDL.Text], [IDL.Vec(AppEvent)], ['query']),
   'getAllBulkCommentTotals' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(IDL.Tuple(CommentListId, IDL.Nat))],
@@ -142,6 +165,16 @@ export const idlService = IDL.Service({
   'getAllUserRatingImages' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(RatingImageMetadata)))],
+      ['query'],
+    ),
+  'getAppEvent' : IDL.Func(
+      [IDL.Text, AppEventId],
+      [IDL.Opt(AppEvent)],
+      ['query'],
+    ),
+  'getAppEventIds' : IDL.Func(
+      [],
+      [IDL.Vec(IDL.Tuple(AppEventId, IDL.Text))],
       ['query'],
     ),
   'getAvailableComments' : IDL.Func(
@@ -196,7 +229,13 @@ export const idlService = IDL.Service({
   'removeAllUserRatingImages' : IDL.Func([IDL.Text], [], []),
   'removeComment' : IDL.Func([IDL.Text, CommentListId, CommentId], [], []),
   'removeRatingImage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+  'removeUsernameFromAppEvent' : IDL.Func(
+      [IDL.Text, AppEventId, IDL.Text],
+      [],
+      [],
+    ),
   'replyMessage' : IDL.Func([IDL.Text, IDL.Text], [MessageId], []),
+  'resetAppEventUsernames' : IDL.Func([IDL.Text, AppEventId], [], []),
   'resetBulkGeneratorKey' : IDL.Func([IDL.Text], [], []),
   'resetCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
   'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
@@ -232,11 +271,13 @@ export const idlFactory = ({ IDL }) => {
   const CommentListId = IDL.Text;
   const CommentId = IDL.Text;
   const Principal = IDL.Principal;
+  const AppEventId = IDL.Text;
   const UserRole = IDL.Variant({
     'admin' : IDL.Null,
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const MessageId = IDL.Text;
   const RatingImageId = IDL.Text;
   const Time = IDL.Int;
   const ExternalBlob = IDL.Vec(IDL.Nat8);
@@ -254,7 +295,12 @@ export const idlFactory = ({ IDL }) => {
     'timestamp' : Time,
   });
   const DeviceId = IDL.Text;
-  const MessageId = IDL.Text;
+  const AppEvent = IDL.Record({
+    'id' : AppEventId,
+    'name' : IDL.Text,
+    'createdAt' : Time,
+    'usernames' : IDL.Vec(IDL.Text),
+  });
   const MessageSide = IDL.Variant({ 'admin' : IDL.Null, 'user' : IDL.Null });
   const Message = IDL.Record({
     'id' : MessageId,
@@ -316,10 +362,29 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addFundsToWallet' : IDL.Func([IDL.Text, Principal, IDL.Nat], [], []),
+    'addUsernameToAppEvent' : IDL.Func(
+        [IDL.Text, AppEventId, IDL.Text],
+        [],
+        [],
+      ),
+    'addUsernamesToAppEvent' : IDL.Func(
+        [IDL.Text, AppEventId, IDL.Vec(IDL.Text)],
+        [],
+        [],
+      ),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'checkUsernamesInAppEvent' : IDL.Func(
+        [AppEventId, IDL.Vec(IDL.Text)],
+        [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))],
+        ['query'],
+      ),
     'clearAllCommentLists' : IDL.Func([IDL.Text], [], []),
+    'clearEverything' : IDL.Func([IDL.Text], [], []),
+    'createAppEvent' : IDL.Func([IDL.Text, IDL.Text], [AppEventId], []),
     'createCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+    'deleteAppEvent' : IDL.Func([IDL.Text, AppEventId], [], []),
     'deleteCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+    'deleteMessage' : IDL.Func([IDL.Text, MessageId], [], []),
     'downloadAllRatingImages' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(RatingImageMetadata)],
@@ -335,6 +400,7 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Text)],
         [],
       ),
+    'getAllAppEvents' : IDL.Func([IDL.Text], [IDL.Vec(AppEvent)], ['query']),
     'getAllBulkCommentTotals' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(IDL.Tuple(CommentListId, IDL.Nat))],
@@ -349,6 +415,16 @@ export const idlFactory = ({ IDL }) => {
     'getAllUserRatingImages' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Vec(RatingImageMetadata)))],
+        ['query'],
+      ),
+    'getAppEvent' : IDL.Func(
+        [IDL.Text, AppEventId],
+        [IDL.Opt(AppEvent)],
+        ['query'],
+      ),
+    'getAppEventIds' : IDL.Func(
+        [],
+        [IDL.Vec(IDL.Tuple(AppEventId, IDL.Text))],
         ['query'],
       ),
     'getAvailableComments' : IDL.Func(
@@ -407,7 +483,13 @@ export const idlFactory = ({ IDL }) => {
     'removeAllUserRatingImages' : IDL.Func([IDL.Text], [], []),
     'removeComment' : IDL.Func([IDL.Text, CommentListId, CommentId], [], []),
     'removeRatingImage' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [], []),
+    'removeUsernameFromAppEvent' : IDL.Func(
+        [IDL.Text, AppEventId, IDL.Text],
+        [],
+        [],
+      ),
     'replyMessage' : IDL.Func([IDL.Text, IDL.Text], [MessageId], []),
+    'resetAppEventUsernames' : IDL.Func([IDL.Text, AppEventId], [], []),
     'resetBulkGeneratorKey' : IDL.Func([IDL.Text], [], []),
     'resetCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
     'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),

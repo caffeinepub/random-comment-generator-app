@@ -1,101 +1,237 @@
 {
   "kind": "implementation_plan",
   "version": "1.0",
-  "title": "Live List Checker (frontend): hooks + user flow + admin panel section + amber/charcoal theme",
+  "title": "Add admin controls, music system, local storage caching, and top-down shooter game",
   "requirements": [
     {
-      "id": "REQ-4",
-      "summary": "Add React Query hooks for Live List Checker admin and user operations (list, claims, approvals, totals, limits, contact info) aligned with existing hooks pattern.",
+      "id": "REQ-1",
+      "summary": "Add delete buttons for individual comments in Admin Panel with confirmation dialogs",
       "acceptanceCriteria": [
-        "All new backend methods needed by the UI have corresponding React Query hooks (queries/mutations) with cache invalidation similar to existing patterns (e.g., invalidating list/totals on mutation).",
-        "Errors such as ‘name already taken’ are surfaced to the UI via toast or inline messaging (English text)."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/backend.d.ts",
-          "operation": "modify",
-          "description": "Extend the typed backend interface with Live List Checker methods and types (name list, claim record/status, totals, limits/settings, contact info) so the new hooks/UI compile against the actor. (No backend implementation here; just frontend typing.)"
-        },
-        {
-          "path": "frontend/src/hooks/useQueries.ts",
-          "operation": "modify",
-          "description": "Add Live List Checker React Query hooks (queries/mutations) for: upload/replace name list (admin), fetch active list, create claim with required UPI ID, fetch claim status for a name, fetch admin claim queue(s) with filtering, approve/reject claims, fetch totals, and get/set limits + contact info. Follow existing patterns: useActor dependency gating, toast error/success, and invalidate relevant query keys after mutations."
-        }
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "summary": "Implement user-facing Live List Checker flow (instructions, name availability, claim with UPI ID, status display, contact info display) within the existing customer view.",
-      "acceptanceCriteria": [
-        "User can enter a name and submit a claim with a required UPI ID field.",
-        "If the name is already claimed, the UI shows an English message indicating it is already taken and does not create a new claim.",
-        "After submitting, the UI shows claim status as ‘Pending’ (and updates to ‘Approved’/‘Rejected’ after admin action).",
-        "User can see current contact info (including WhatsApp number) in the Live List Checker user view."
-      ],
-      "file_operations": [
-        {
-          "path": "frontend/src/pages/UserView.tsx",
-          "operation": "modify",
-          "description": "Wire the Live List Checker into the existing customer view (e.g., as an additional sub-tab/section) without introducing a new top-level route. Include instructions, name input, availability/status display, and claim submission requiring UPI ID. Use the new Live List Checker hooks and show English inline/toast errors for taken/limit/auth failures. If authentication is required by backend, prompt user to log in before allowing claim submission (use existing Internet Identity integration; do not modify immutable auth hook files)."
-        },
-        {
-          "path": "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
-          "operation": "create",
-          "description": "Create a dedicated user section component that renders the Live List Checker UI: instructions, name lookup, status badges (Available/Pending/Approved/Rejected/Taken), UPI ID input shown/required when claiming, and a contact info card including WhatsApp number. Use shadcn/ui building blocks already present (Card, Input, Button, Badge, etc.). Verify the component's usage instructions before implementing."
-        },
-        {
-          "path": "frontend/src/components/live-list-checker/statusStyles.ts",
-          "operation": "create",
-          "description": "Add a small shared mapping/utility for consistent status label text + badge classnames (amber/charcoal palette) used by both user and admin Live List Checker UIs."
-        }
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "summary": "Extend Admin Panel with a Live List Checker tab for managing name lists, claims review/actions, limits/amounts, totals, and contact info.",
-      "acceptanceCriteria": [
-        "Admin can paste/upload a list of names and submit it; the list becomes active immediately for user checks.",
-        "Admin can see a table/list of claims with name, UPI ID, status, and timestamp.",
-        "Admin can approve or reject a claim; the claim status updates in the UI after action.",
-        "Admin can set limits and per-claim amount, and see totals computed from claims.",
-        "Admin can edit and save contact info including WhatsApp number."
+        "Each comment in the admin panel displays a delete button",
+        "Clicking delete removes the comment from backend storage",
+        "UI updates immediately after deletion without page refresh",
+        "Deletion requires confirmation to prevent accidental removal"
       ],
       "file_operations": [
         {
           "path": "frontend/src/pages/AdminPanel.tsx",
           "operation": "modify",
-          "description": "Add a new Admin Panel tab/section for Live List Checker and wire it into the existing shadcn Tabs layout. Keep existing admin PIN gating behavior intact. The new section should support: bulk paste and/or file upload for names, claim queue table with status filter, approve/reject actions, limits/per-claim amount form, totals display, and contact info editor (WhatsApp number included). Verify the component's usage instructions before implementing."
+          "description": "Add delete button UI for each comment row in the comment list management section with confirmation dialog. Wire to the removeComment backend method using the useQueries hook. Update UI state immediately after successful deletion."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Add delete buttons for individual usernames in Admin Live List Panel with confirmation dialogs",
+      "acceptanceCriteria": [
+        "Each username in live lists displays a delete button",
+        "Clicking delete removes only that username from the selected app/event",
+        "UI reflects the deletion immediately",
+        "Deletion includes confirmation dialog"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AdminLiveListPanel.tsx",
+          "operation": "modify",
+          "description": "Add delete button UI for each username entry in the live list. Wire to the removeUsernameFromAppEvent backend method using useAdminLiveListQueries hook. Include confirmation dialog before deletion and update UI immediately after successful removal."
+        }
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "summary": "Add Clear All button to Admin Panel that removes all data with double confirmation",
+      "acceptanceCriteria": [
+        "Clear All button visible in admin panel main view",
+        "Button requires double confirmation before executing",
+        "Clears all comments from all lists",
+        "Clears all app/event entries and their usernames",
+        "Shows success message after clearing",
+        "Updates all dependent UI elements immediately"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add a prominent Clear All button in the admin panel header or toolbar. Wire to the clearEverything backend method using the useQueries hook. Implement double confirmation dialog (two-step confirmation) before executing. Show success toast notification after clearing and invalidate all relevant queries to refresh the UI."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Implement one-click download feature in Admin Panel exporting all data in CSV and JSON formats",
+      "acceptanceCriteria": [
+        "Download button prominently placed in admin panel",
+        "Single click triggers download of multiple files or a zip archive",
+        "Exports comments list as CSV and JSON",
+        "Exports app/event data with usernames as CSV and JSON",
+        "Files are named descriptively with timestamps",
+        "Download works across modern browsers"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/dataExport.ts",
+          "operation": "create",
+          "description": "Create utility functions to fetch all data from backend (comments via getCommentList for all list IDs, app events via getAllAppEvents), convert to CSV and JSON formats, and trigger browser downloads with timestamped filenames. Support both individual file downloads and optional zip archive bundling."
         },
         {
-          "path": "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add a Download All Data button in the admin panel toolbar. Wire to the dataExport utility to fetch all comments and app/event data, then trigger downloads of CSV and JSON files with descriptive timestamps. Show loading state during data fetch and export process."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Implement local storage caching for comment lists, app events, and usernames with background sync",
+      "acceptanceCriteria": [
+        "All list data is cached in localStorage on fetch",
+        "Cached data loads instantly on page load",
+        "Background sync with backend occurs after displaying cache",
+        "Cache updates when backend data changes",
+        "Cache invalidation strategy prevents stale data",
+        "Performance improvement is measurable (faster initial render)"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/utils/localStorageCache.ts",
           "operation": "create",
-          "description": "Create an admin-focused component used by AdminPanel that provides: name list upload/replace (textarea and optional file parse), claims table (name, UPI ID, status, timestamp) with filtering, approve/reject controls, limits + per-claim amount editor, totals cards, and contact info editor (WhatsApp number). Use the new hooks and invalidate/refetch after mutations. Use shadcn/ui components already in the project (Table if available, otherwise Cards + ScrollArea + rows). Verify the component's usage instructions before implementing."
+          "description": "Create a local storage cache manager with methods to get, set, and invalidate cached data for comment lists, app events, and usernames. Include timestamp-based cache invalidation strategy (e.g., 5-minute TTL) and versioning to handle schema changes."
+        },
+        {
+          "path": "frontend/src/hooks/useQueries.ts",
+          "operation": "modify",
+          "description": "Modify React Query hooks to check localStorage cache first before fetching from backend. Return cached data immediately for instant display, then fetch from backend in the background and update cache. Wire cache invalidation to mutation success callbacks."
+        },
+        {
+          "path": "frontend/src/hooks/useAdminLiveListQueries.ts",
+          "operation": "modify",
+          "description": "Modify admin live list queries to use localStorage cache for app events and usernames. Return cached data first for instant render, then background sync with backend. Update cache on all mutation successes."
+        }
+      ]
+    },
+    {
+      "id": "REQ-6",
+      "summary": "Add background music system with auto-play, play/pause, and volume controls",
+      "acceptanceCriteria": [
+        "Music attempts to auto-play on site load (muted if browser blocks unmuted autoplay)",
+        "Play/pause button visible in UI (header or fixed position)",
+        "Volume slider control accessible to users",
+        "Music state persists across page navigation",
+        "Graceful fallback if autoplay is blocked",
+        "User preferences (volume level, play state) saved in localStorage"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/useMusicPlayer.ts",
+          "operation": "create",
+          "description": "Create a React hook that manages background music playback using the HTML5 Audio API. Implement auto-play with muted fallback for browser autoplay policies, play/pause toggle, volume control, and persistence of user preferences (volume level, play state) in localStorage. Handle music URL fetching from backend and state management across component lifecycle."
+        },
+        {
+          "path": "frontend/src/components/MusicControls.tsx",
+          "operation": "create",
+          "description": "Create a fixed-position UI component (likely in header or bottom-right corner) displaying play/pause button and volume slider. Use the useMusicPlayer hook to wire controls. Style with icons and smooth transitions matching the app design."
+        },
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Integrate the MusicControls component into the header layout. Position it accessibly for all users while maintaining the existing header structure (branding, theme toggle, admin unlock status, logout button)."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Initialize the useMusicPlayer hook at the App level to ensure music state persists across tab navigation and page changes. Handle auto-play attempt on app mount with graceful fallback if blocked."
+        }
+      ]
+    },
+    {
+      "id": "REQ-7",
+      "summary": "Add music upload and management functionality to Admin Panel with preview, replace, and remove options",
+      "acceptanceCriteria": [
+        "Admin panel includes music management section",
+        "File upload accepts MP3 and WAV formats",
+        "Uploaded music is stored in backend as a blob or asset",
+        "All users receive the same music URL from backend",
+        "Admin can preview uploaded music before making it live",
+        "Admin can replace or remove current music",
+        "Music changes propagate to all connected users within reasonable time"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/AdminMusicManager.tsx",
+          "operation": "create",
+          "description": "Create admin component for music file management. Include file input accepting MP3 and WAV formats, upload progress tracking using ExternalBlob.withUploadProgress, preview player for uploaded music, and buttons to make music live, replace, or remove. Wire to backend methods for storing and retrieving music blob references. Verify the blob-storage component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add a new Music Management tab in the admin panel containing the AdminMusicManager component. Position it alongside existing tabs (Comment Lists, Chat, User Images, Bulk Generator Keys, Live Lists)."
+        },
+        {
+          "path": "frontend/src/hooks/useMusicPlayer.ts",
+          "operation": "modify",
+          "description": "Update the music player hook to fetch the current music URL from backend on initialization. Poll or refetch periodically to detect music changes uploaded by admin. Update the audio source dynamically when a new music file is detected."
         }
       ]
     },
     {
       "id": "REQ-8",
-      "summary": "Apply a distinct warm amber + charcoal theme for Live List Checker UI with consistent cards/badges and accessible form states (no blue/purple primary).",
+      "summary": "Replace Interactive3DCube with a lightweight top-down shooter 2D game using HTML5 Canvas",
       "acceptanceCriteria": [
-        "Live List Checker UI uses consistent typography, spacing, and components (cards, badges, inputs, dialogs) aligned with the existing design system.",
-        "Status (Available/Pending/Approved/Rejected/Taken) is clearly distinguishable using consistent badge colors and text labels.",
-        "All user-facing text is English."
+        "Game renders in the same position where the 3D cube currently displays",
+        "Player character can move in four directions using keyboard controls",
+        "Player can shoot projectiles toward mouse cursor or in a fixed direction",
+        "Enemies spawn periodically and move toward player",
+        "Collision detection between projectiles and enemies",
+        "Score counter displays enemy defeats",
+        "Game over condition when player is hit by enemies",
+        "Restart button available after game over",
+        "Game runs smoothly at 60 FPS on modern devices",
+        "Visual style matches or complements the existing app design"
       ],
       "file_operations": [
         {
-          "path": "frontend/src/index.css",
-          "operation": "modify",
-          "description": "Add Live List Checker-specific utility classes (scoped, non-global-primary) to support a warm amber + charcoal look (card borders/background accents, button variants if needed, and status badge colors). Ensure Live List Checker components use these utilities instead of the existing purple/blue gradient utilities for their primary actions."
+          "path": "frontend/src/components/TopDownShooterGame.tsx",
+          "operation": "create",
+          "description": "Create a 2D game component using HTML5 Canvas rendering a top-down shooter. Implement player movement (WASD or arrow keys), shooting mechanics (mouse click or spacebar), enemy wave spawning with AI that moves toward player, collision detection (projectiles vs enemies, enemies vs player), score tracking, game over state, and restart functionality. Use requestAnimationFrame for 60 FPS rendering. Keep visual style simple with shapes/sprites that complement the app design. Store game state (score, high score) in component state."
         },
         {
-          "path": "frontend/src/components/live-list-checker/LiveListCheckerUserSection.tsx",
+          "path": "frontend/src/pages/UserView.tsx",
           "operation": "modify",
-          "description": "Ensure the user Live List Checker section consistently uses the amber/charcoal styling utilities and clearly distinguishes statuses with consistent badge colors/labels. Verify the component's usage instructions before implementing."
+          "description": "Replace the Interactive3DCube component import and usage with the new TopDownShooterGame component. Maintain the same layout position and container styling to preserve the overall page structure."
+        }
+      ]
+    },
+    {
+      "id": "REQ-9",
+      "summary": "Maintain secure data handling for all new features with admin access code protection",
+      "acceptanceCriteria": [
+        "Admin access code validation required for delete operations",
+        "Admin access code validation required for Clear All operation",
+        "Admin access code validation required for music management",
+        "File uploads validated for type and size",
+        "No sensitive data exposed in frontend code",
+        "Backend validates all admin operations with access code"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Ensure all new admin operations (delete comments, Clear All button) pass the admin access code from adminPinSession.ts to backend methods. Validate user confirmation before executing destructive operations."
         },
         {
-          "path": "frontend/src/components/live-list-checker/LiveListCheckerAdminSection.tsx",
+          "path": "frontend/src/pages/AdminLiveListPanel.tsx",
           "operation": "modify",
-          "description": "Ensure the admin Live List Checker section consistently uses the amber/charcoal styling utilities and clearly distinguishes statuses with consistent badge colors/labels. Verify the component's usage instructions before implementing."
+          "description": "Ensure delete username operations pass the admin access code to the backend removeUsernameFromAppEvent method for validation."
+        },
+        {
+          "path": "frontend/src/components/AdminMusicManager.tsx",
+          "operation": "modify",
+          "description": "Add client-side file type validation (MP3, WAV only) and file size limits (e.g., 10MB max) before upload. Pass admin access code to any backend music management methods to ensure authorization."
+        },
+        {
+          "path": "frontend/src/utils/dataExport.ts",
+          "operation": "modify",
+          "description": "Ensure data export fetches use admin-protected backend methods with the access code from adminPinSession.ts. Do not expose sensitive data structures or access tokens in exported files."
         }
       ]
     }

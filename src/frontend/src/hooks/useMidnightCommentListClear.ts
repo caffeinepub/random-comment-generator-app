@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
-import { useClearAllCommentLists } from './useQueries';
+import { useClearEverything } from './useQueries';
 import { useQueryClient } from '@tanstack/react-query';
 
 const LAST_CLEAR_DATE_KEY = 'lastMidnightClearDate';
 
 export function useMidnightCommentListClear(isEnabled: boolean) {
-  const { mutate: clearAllLists } = useClearAllCommentLists();
+  const { mutate: clearEverything } = useClearEverything();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -21,11 +21,10 @@ export function useMidnightCommentListClear(isEnabled: boolean) {
         // If we haven't cleared today yet
         if (lastClearDate !== today) {
           const currentHour = now.getHours();
-          const currentMinute = now.getMinutes();
           
           // Check if it's past midnight (00:00 - 00:59)
           if (currentHour === 0) {
-            clearAllLists(undefined, {
+            clearEverything(undefined, {
               onSuccess: () => {
                 localStorage.setItem(LAST_CLEAR_DATE_KEY, today);
                 queryClient.invalidateQueries({ queryKey: ['commentListIds'] });
@@ -51,5 +50,5 @@ export function useMidnightCommentListClear(isEnabled: boolean) {
     const intervalId = setInterval(checkAndClearAtMidnight, 60000);
 
     return () => clearInterval(intervalId);
-  }, [isEnabled, clearAllLists, queryClient]);
+  }, [isEnabled, clearEverything, queryClient]);
 }

@@ -1,7 +1,3 @@
-import typography from '@tailwindcss/typography';
-import containerQueries from '@tailwindcss/container-queries';
-import animate from 'tailwindcss-animate';
-
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
@@ -14,54 +10,54 @@ export default {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
-        background: 'oklch(var(--background))',
-        foreground: 'oklch(var(--foreground))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         card: {
-          DEFAULT: 'oklch(var(--card))',
-          foreground: 'oklch(var(--card-foreground))',
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
         },
         popover: {
-          DEFAULT: 'oklch(var(--popover))',
-          foreground: 'oklch(var(--popover-foreground))',
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
         },
         primary: {
-          DEFAULT: 'oklch(var(--primary))',
-          foreground: 'oklch(var(--primary-foreground))',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
-          DEFAULT: 'oklch(var(--secondary))',
-          foreground: 'oklch(var(--secondary-foreground))',
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         muted: {
-          DEFAULT: 'oklch(var(--muted))',
-          foreground: 'oklch(var(--muted-foreground))',
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: 'oklch(var(--accent))',
-          foreground: 'oklch(var(--accent-foreground))',
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
         },
         destructive: {
-          DEFAULT: 'oklch(var(--destructive))',
-          foreground: 'oklch(var(--destructive-foreground))',
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
         },
-        border: 'oklch(var(--border))',
-        input: 'oklch(var(--input))',
-        ring: 'oklch(var(--ring))',
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
         chart: {
-          1: 'oklch(var(--chart-1))',
-          2: 'oklch(var(--chart-2))',
-          3: 'oklch(var(--chart-3))',
-          4: 'oklch(var(--chart-4))',
-          5: 'oklch(var(--chart-5))',
+          1: 'hsl(var(--chart-1))',
+          2: 'hsl(var(--chart-2))',
+          3: 'hsl(var(--chart-3))',
+          4: 'hsl(var(--chart-4))',
+          5: 'hsl(var(--chart-5))',
         },
       },
       keyframes: {
         'pulse-glow': {
           '0%, 100%': {
-            boxShadow: '0 0 20px rgba(139, 92, 246, 0.45)',
+            boxShadow: '0 0 20px oklch(var(--gradient-start) / 0.3)',
           },
           '50%': {
-            boxShadow: '0 0 40px rgba(139, 92, 246, 0.65)',
+            boxShadow: '0 0 30px oklch(var(--gradient-start) / 0.5)',
           },
         },
       },
@@ -70,5 +66,5 @@ export default {
       },
     },
   },
-  plugins: [typography, containerQueries, animate],
+  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
 };
