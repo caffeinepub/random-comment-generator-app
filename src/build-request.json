@@ -1,228 +1,157 @@
 {
   "kind": "build_request",
-  "title": "Add admin controls, music system, local storage caching, and top-down shooter game",
-  "projectName": "App Review Manager",
+  "title": "AI Comment Generator with Enhanced UI and 3D Elements",
+  "projectName": "AI Comment Studio",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add delete buttons for individual comments in the Admin Panel comment list management section. Each comment row should have a delete icon/button that removes that specific comment from the backend and updates the UI.",
-      "target": "both",
+      "text": "Add comment length selection dropdown to AiCommentGenerator component with three options: Short (50-100 words), Medium (100-200 words), and Long (200-300 words). Pass the selected length to the generation logic.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-7"
         ],
         "quotes": [
-          "add options to delete comments or names through admin panel"
+          "Add Comment Length Selection: Add a new UI input field (a dropdown or toggle buttons) allowing users to select the length of the generated comments (e.g., Short, Medium, Long, or exact word counts)."
         ]
       },
       "acceptanceCriteria": [
-        "Each comment in the admin panel displays a delete button",
-        "Clicking delete removes the comment from backend storage",
-        "UI updates immediately after deletion without page refresh",
-        "Deletion requires confirmation to prevent accidental removal"
+        "Dropdown appears in AiCommentGenerator form with Short/Medium/Long options",
+        "Selected length is passed to comment generation function",
+        "Default selection is Medium"
       ]
     },
     {
       "id": "REQ-2",
-      "text": "Add delete buttons for individual usernames in the Admin Live List Panel. Each username entry should have a delete icon/button that removes it from the specific app/event list.",
-      "target": "both",
+      "text": "Enhance the comment generation algorithm in AiCommentGenerator to guarantee completely fresh, unique comments on every generation. Use randomized sentence structures, varied vocabulary pools, dynamic adjectives, and timestamp-based seeding to prevent any duplicate outputs. Integrate the rating symbol naturally into the generated text.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-7"
         ],
         "quotes": [
-          "add options to delete comments or names through admin panel"
+          "Fresh Generation Logic: Update the backend/API prompt logic to guarantee that every generation creates completely fresh, unique, and live comments every time the 'Generate' button is clicked, preventing any duplicate or cached results."
         ]
       },
       "acceptanceCriteria": [
-        "Each username in live lists displays a delete button",
-        "Clicking delete removes only that username from the selected app/event",
-        "UI reflects the deletion immediately",
-        "Deletion includes confirmation dialog"
+        "Each generation produces completely unique comments with no repetition",
+        "Rating symbol is seamlessly integrated into comment text",
+        "Comments vary in structure, vocabulary, and phrasing",
+        "Timestamp-based seeding ensures different results each time"
       ]
     },
     {
       "id": "REQ-3",
-      "text": "Add a Clear All button to the Admin Panel that removes all comments, app events, and usernames from the system. This should be a prominent action button with strong confirmation.",
-      "target": "both",
+      "text": "Fix the list visibility glitch in AiCommentTable so that generated comments appear instantly and correctly below the generation card as soon as the user clicks 'Generate'. Ensure proper state management and DOM updates.",
+      "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5"
+          "msg-7"
         ],
         "quotes": [
-          "also make all clear button"
+          "Instant Visibility & State Fix: Fix the glitch where lists aren't showing up correctly. The generated comment list should instantly appear below the generation card as soon as the user clicks 'Generate'."
         ]
       },
       "acceptanceCriteria": [
-        "Clear All button visible in admin panel main view",
-        "Button requires double confirmation before executing",
-        "Clears all comments from all lists",
-        "Clears all app/event entries and their usernames",
-        "Shows success message after clearing",
-        "Updates all dependent UI elements immediately"
+        "Comment list appears immediately after generation without requiring page refresh",
+        "No delay or blank state between generation and display",
+        "Comments render in the correct order"
       ]
     },
     {
       "id": "REQ-4",
-      "text": "Implement one-click download feature in Admin Panel that exports all data (comments, app events, usernames) in both CSV and JSON formats. The download should bundle all data types into separate files within a single download action.",
+      "text": "Implement a skeleton loader in AiCommentTable that displays while comments are being generated. Add a smooth typing effect animation that reveals each comment character-by-character after it's fetched to create a real-time streaming appearance.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5",
           "msg-7"
         ],
         "quotes": [
-          "Download it's full list",
-          "One-click download button that exports all data (comments, apps/events, usernames) in both CSV and JSON formats"
+          "Real-Time Streaming/Loading: Reduce perceived response time by implementing a skeleton loader or a real-time streaming effect (typing effect) as the comments are being fetched and rendered."
         ]
       },
       "acceptanceCriteria": [
-        "Download button prominently placed in admin panel",
-        "Single click triggers download of multiple files or a zip archive",
-        "Exports comments list as CSV and JSON",
-        "Exports app/event data with usernames as CSV and JSON",
-        "Files are named descriptively with timestamps",
-        "Download works across modern browsers"
+        "Skeleton loader shows while waiting for generation to complete",
+        "Typing effect animates each comment appearing character-by-character",
+        "Animation speed is smooth and natural (not too fast or slow)",
+        "Loading state transitions smoothly to typed content"
       ]
     },
     {
       "id": "REQ-5",
-      "text": "Implement local storage caching for comment lists, app events, and usernames. Cache data locally on initial load and subsequent fetches, serving from cache for instant display while syncing with backend in the background.",
+      "text": "Create a lightweight 3D rotating cube using pure CSS 3D transforms and integrate it into the AdminPanel AI Comments tab. Position it strategically to complement the dark theme and purple/pink gradients without cluttering the form area. The cube should rotate continuously and smoothly.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5",
           "msg-7"
         ],
         "quotes": [
-          "its list save into its local storage and user get the data through it",
-          "Local Storage Caching: Fast-loading lists that sync with the backend"
+          "3D Rotating Cube: Integrate a lightweight, visually appealing 3D rotating cube model into the user view (use CSS 3D transforms or React Three Fiber if a heavy library is already installed)."
         ]
       },
       "acceptanceCriteria": [
-        "All list data is cached in localStorage on fetch",
-        "Cached data loads instantly on page load",
-        "Background sync with backend occurs after displaying cache",
-        "Cache updates when backend data changes",
-        "Cache invalidation strategy prevents stale data",
-        "Performance improvement is measurable (faster initial render)"
+        "3D cube uses only CSS 3D transforms (no heavy libraries)",
+        "Cube rotates continuously on multiple axes",
+        "Positioned to enhance aesthetics without blocking form elements",
+        "Matches dark theme with purple/pink gradient styling",
+        "Performance remains smooth with no lag"
       ]
     },
     {
       "id": "REQ-6",
-      "text": "Add background music system that auto-plays when the website opens (respecting browser autoplay policies with muted start if needed). Include visible play/pause and volume control buttons accessible to all users.",
+      "text": "Optimize the loading speed of AiCommentGenerator component by ensuring all async operations (comment generation, API calls) don't block the main thread. Use proper React Query hooks with optimistic updates and ensure mutations complete efficiently.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5",
           "msg-7"
         ],
         "quotes": [
-          "add music music after opening website",
-          "Auto-play background music with visible play/pause and volume controls for users"
+          "Speed Optimization: Optimize the loading speed of the component. Ensure API calls are handled asynchronously without blocking the main thread."
         ]
       },
       "acceptanceCriteria": [
-        "Music attempts to auto-play on site load (muted if browser blocks unmuted autoplay)",
-        "Play/pause button visible in UI (header or fixed position)",
-        "Volume slider control accessible to users",
-        "Music state persists across page navigation",
-        "Graceful fallback if autoplay is blocked",
-        "User preferences (volume level, play state) saved in localStorage"
+        "Comment generation doesn't freeze the UI",
+        "Main thread remains responsive during operations",
+        "Loading states provide clear feedback",
+        "Component renders quickly on initial load"
       ]
     },
     {
       "id": "REQ-7",
-      "text": "Add music upload and management functionality to the Admin Panel. Admins can upload audio files (MP3, WAV) which are stored in the backend and served to all users as the background music. Include options to preview, replace, and remove the current music file.",
-      "target": "both",
-      "source": {
-        "messageIds": [
-          "msg-5",
-          "msg-7"
-        ],
-        "quotes": [
-          "the music added by the admin panel it is stored live all people can little live while opening site",
-          "managed through admin panel"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Admin panel includes music management section",
-        "File upload accepts MP3 and WAV formats",
-        "Uploaded music is stored in backend as a blob or asset",
-        "All users receive the same music URL from backend",
-        "Admin can preview uploaded music before making it live",
-        "Admin can replace or remove current music",
-        "Music changes propagate to all connected users within reasonable time"
-      ]
-    },
-    {
-      "id": "REQ-8",
-      "text": "Replace the existing Interactive3DCube component with a lightweight top-down shooter mini-game using HTML5 Canvas or React Three Fiber. The game should feature player-controlled character movement (WASD or arrow keys), shooting mechanics (mouse click or spacebar), and enemy waves that spawn and move toward the player. Keep gameplay simple, engaging, and performant.",
+      "text": "Polish the UI of AiCommentGenerator and AiCommentTable with smooth hover states, proper spacing, clean transitions, and modern styling. Keep the existing dark theme with purple/pink gradients but enhance button interactions, input focus states, and card shadows for a snappier, more modern feel.",
       "target": "frontend",
       "source": {
         "messageIds": [
-          "msg-5",
-          "msg-9"
-        ],
-        "quotes": [
-          "replace 3d model cube with any game runs instead of cube place intresting game",
-          "top-down shooter mini-game where players control a character and shoot enemies"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Game renders in the same position where the 3D cube currently displays",
-        "Player character can move in four directions using keyboard controls",
-        "Player can shoot projectiles toward mouse cursor or in a fixed direction",
-        "Enemies spawn periodically and move toward player",
-        "Collision detection between projectiles and enemies",
-        "Score counter displays enemy defeats",
-        "Game over condition when player is hit by enemies",
-        "Restart button available after game over",
-        "Game runs smoothly at 60 FPS on modern devices",
-        "Visual style matches or complements the existing app design"
-      ]
-    },
-    {
-      "id": "REQ-9",
-      "text": "Maintain secure data handling for all new features including music uploads, game state, and admin operations. Ensure admin access code protection (5676) remains enforced for sensitive operations.",
-      "target": "both",
-      "source": {
-        "messageIds": [
           "msg-7"
         ],
         "quotes": [
-          "secure data handling"
+          "UI Polish: Improve the overall UI/UX of the form. Ensure inputs, buttons, and dashboard cards have smooth hover states, proper padding, and clean transitions. Keep the existing dark theme with purple/pink gradients but make it feel more modern and snappy."
         ]
       },
       "acceptanceCriteria": [
-        "Admin access code validation required for delete operations",
-        "Admin access code validation required for Clear All operation",
-        "Admin access code validation required for music management",
-        "File uploads validated for type and size",
-        "No sensitive data exposed in frontend code",
-        "Backend validates all admin operations with access code"
+        "All interactive elements have smooth hover transitions",
+        "Input fields show clear focus states",
+        "Buttons have press feedback with scale/shadow effects",
+        "Consistent padding and spacing throughout",
+        "Dark theme with purple/pink gradients maintained",
+        "Transitions are smooth (200-300ms) and feel responsive"
       ]
     }
   ],
   "constraints": [
-    "Do not modify frontend/src/hooks/useInternetIdentity.ts",
-    "Do not modify frontend/src/hooks/useActor.ts",
-    "Do not modify frontend/src/main.tsx",
-    "Do not modify frontend/src/components/ui/* files",
-    "Maintain single-actor architecture in backend/main.mo",
-    "Preserve existing admin access code (5676) functionality",
-    "Maintain existing App Review & Comment Management structure",
-    "Keep all features responsive across devices"
+    "Use pure CSS 3D transforms for the rotating cube, not React Three Fiber or WebGL libraries",
+    "Maintain the existing dark theme with purple/pink gradient color scheme",
+    "Do not modify immutable frontend paths: useInternetIdentity hooks, useActor.ts, main.tsx, or components/ui",
+    "Keep all Motoko logic in the single main actor file (backend/main.mo)",
+    "Comment generation must work without external AI API integrations"
   ],
   "nonGoals": [
-    "Redesigning the core structure of the website",
-    "Changing the existing color scheme or visual design beyond the mini-game",
-    "Adding real-time multiplayer to the shooter game",
-    "Implementing complex 3D graphics for the game",
-    "Adding authentication beyond the existing admin access code",
-    "Modifying the existing comment generation logic",
-    "Changing the Internet Identity integration"
+    "Integrating external AI services like OpenAI or Anthropic",
+    "Using React Three Fiber or heavy 3D libraries",
+    "Changing the overall application architecture or technology stack",
+    "Adding WebSocket support for real-time streaming",
+    "Modifying the backend Motoko actor structure beyond what's necessary"
   ],
   "imageRequirements": {
     "required": [],

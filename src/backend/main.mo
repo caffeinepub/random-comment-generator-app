@@ -10,10 +10,11 @@ import Iter "mo:core/Iter";
 import Storage "blob-storage/Storage";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
-import MixinAuthorization "authorization/MixinAuthorization";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+import MixinAuthorization "authorization/MixinAuthorization";
+
+
 actor {
   let accessControlState = AccessControl.initState();
   include MixinAuthorization(accessControlState);
@@ -24,11 +25,20 @@ actor {
   type RatingImageId = Text;
   type MessageId = Text;
   type AppEventId = Text;
+  type AiCommentId = Text;
 
   type Comment = {
     id : CommentId;
     content : Text;
     used : Bool;
+    timestamp : Time.Time;
+  };
+
+  type AIComment = {
+    id : AiCommentId;
+    content : Text;
+    appLinkOrName : Text;
+    ratingSymbol : Text;
     timestamp : Time.Time;
   };
 
@@ -58,6 +68,7 @@ actor {
     content : Text;
     timestamp : Time.Time;
     isRead : Bool;
+    sender : ?Principal.Principal;
   };
 
   public type AppEvent = {
@@ -130,6 +141,9 @@ actor {
 
   let appEvents = Map.empty<AppEventId, AppEvent>();
   var appEventCounter = 0;
+
+  // AI Comment Management
+  let aiComments = Map.empty<AiCommentId, AIComment>();
 
   func assertAdminAccessWithCode(caller : Principal.Principal, accessCode : Text) {
     let isValidCode = accessCode == nonAuthAccessCode;
@@ -404,6 +418,48 @@ actor {
         );
       };
     };
+  };
+
+  // ================== AI Comment Management =====================
+
+  public shared ({ caller }) func createAiComment(accessCode : Text, content : Text, appLinkOrName : Text, ratingSymbol : Text) : async AiCommentId {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    let aiCommentId = "aiComment_" # Time.now().toText();
+    let aiComment : AIComment = {
+      id = aiCommentId;
+      content;
+      appLinkOrName;
+      ratingSymbol;
+      timestamp = Time.now();
+    };
+
+    aiComments.add(aiCommentId, aiComment);
+    aiCommentId;
+  };
+
+  public query ({ caller }) func getAiComment(accessCode : Text, aiCommentId : AiCommentId) : async ?AIComment {
+    assertAdminAccessWithCode(caller, accessCode);
+    aiComments.get(aiCommentId);
+  };
+
+  public query ({ caller }) func getAllAiComments(accessCode : Text) : async [AIComment] {
+    assertAdminAccessWithCode(caller, accessCode);
+    aiComments.values().toArray();
+  };
+
+  public shared ({ caller }) func deleteAiComment(accessCode : Text, aiCommentId : AiCommentId) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+
+    if (not aiComments.containsKey(aiCommentId)) {
+      Runtime.trap("AI comment not found");
+    };
+    aiComments.remove(aiCommentId);
+  };
+
+  public shared ({ caller }) func clearAllAiComments(accessCode : Text) : async () {
+    assertAdminAccessWithCode(caller, accessCode);
+    aiComments.clear();
   };
 
   // ================== Comment List Management =====================
@@ -810,6 +866,7 @@ actor {
       content;
       timestamp = Time.now();
       isRead = false;
+      sender = ?caller;
     };
     messages.add(messageId, message);
     messageId;
@@ -826,6 +883,7 @@ actor {
       content = replyContent;
       timestamp = Time.now();
       isRead = false;
+      sender = ?caller;
     };
     messages.add(messageId, message);
     messageId;
@@ -850,8 +908,16 @@ actor {
       Runtime.trap("Unauthorized: Only authenticated users can view messages");
     };
 
-    // Users can only see their own messages and admin replies
-    messages.values().toArray();
+    // Users can only see messages they sent or admin replies
+    // Admin replies are broadcast to all users in this simple implementation
+    messages.values().toArray().filter(
+      func(msg) {
+        switch (msg.sender) {
+          case (?sender) { sender == caller or msg.side == #admin };
+          case (null) { msg.side == #admin };
+        };
+      }
+    );
   };
 
   // ================= Delete Everything Functionality =====================
@@ -873,6 +939,7 @@ actor {
     singleCommentHistory.clear();
     messages.clear();
     userRatingImages.clear();
+    aiComments.clear();
     bulkGeneratorKey := null;
   };
 };

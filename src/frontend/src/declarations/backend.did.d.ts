@@ -10,6 +10,14 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface AIComment {
+  'id' : AiCommentId,
+  'content' : string,
+  'ratingSymbol' : string,
+  'appLinkOrName' : string,
+  'timestamp' : Time,
+}
+export type AiCommentId = string;
 export interface AppEvent {
   'id' : AppEventId,
   'name' : string,
@@ -32,6 +40,7 @@ export interface Message {
   'content' : string,
   'side' : MessageSide,
   'isRead' : boolean,
+  'sender' : [] | [Principal],
   'timestamp' : Time,
 }
 export type MessageId = string;
@@ -112,10 +121,16 @@ export interface _SERVICE {
     [AppEventId, Array<string>],
     Array<[string, boolean]>
   >,
+  'clearAllAiComments' : ActorMethod<[string], undefined>,
   'clearAllCommentLists' : ActorMethod<[string], undefined>,
   'clearEverything' : ActorMethod<[string], undefined>,
+  'createAiComment' : ActorMethod<
+    [string, string, string, string],
+    AiCommentId
+  >,
   'createAppEvent' : ActorMethod<[string, string], AppEventId>,
   'createCommentList' : ActorMethod<[string, CommentListId], undefined>,
+  'deleteAiComment' : ActorMethod<[string, AiCommentId], undefined>,
   'deleteAppEvent' : ActorMethod<[string, AppEventId], undefined>,
   'deleteCommentList' : ActorMethod<[string, CommentListId], undefined>,
   'deleteMessage' : ActorMethod<[string, MessageId], undefined>,
@@ -128,6 +143,8 @@ export interface _SERVICE {
     [CommentListId, DeviceId],
     [] | [string]
   >,
+  'getAiComment' : ActorMethod<[string, AiCommentId], [] | [AIComment]>,
+  'getAllAiComments' : ActorMethod<[string], Array<AIComment>>,
   'getAllAppEvents' : ActorMethod<[string], Array<AppEvent>>,
   'getAllBulkCommentTotals' : ActorMethod<
     [string],

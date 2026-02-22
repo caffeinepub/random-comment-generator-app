@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -15,18 +15,32 @@ import { useDeviceScopedGenerateComment } from '../hooks/useDeviceScopedGenerate
 import { useHasSingleCommentGenerated } from '../hooks/useDeviceScopedUserCommentHistory';
 import { toast } from 'sonner';
 import TopDownShooterGame from '../components/TopDownShooterGame';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function UserView() {
   const [selectedListId, setSelectedListId] = useState<string | null>(null);
   const [generatedComment, setGeneratedComment] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const queryClient = useQueryClient();
 
   const deviceId = useDeviceId();
-  const { data: listIds = [] } = useGetCommentListIds();
-  const { data: lockedListIds = [] } = useGetLockedCommentListIds();
+  const { data: listIds = [], isLoading: listIdsLoading } = useGetCommentListIds();
+  const { data: lockedListIds = [], isLoading: lockedListIdsLoading } = useGetLockedCommentListIds();
   const { data: remainingCount = 0n } = useGetRemainingCount(selectedListId);
   const { data: hasGenerated = false } = useHasSingleCommentGenerated(selectedListId);
   const { mutate: generateComment, isPending: isGenerating } = useDeviceScopedGenerateComment();
+
+  // Prefetch dropdown data on mount for instant loading
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['commentListIds'],
+      staleTime: 5 * 60 * 1000,
+    });
+    queryClient.prefetchQuery({
+      queryKey: ['lockedCommentListIds'],
+      staleTime: 5 * 60 * 1000,
+    });
+  }, [queryClient]);
 
   const lockedListIdsSet = new Set(lockedListIds);
   const isSelectedListLocked = selectedListId ? lockedListIdsSet.has(selectedListId) : false;
@@ -68,8 +82,10 @@ export default function UserView() {
     }
   };
 
+  const isLoading = listIdsLoading || lockedListIdsLoading;
+
   return (
-    <div className="max-w-6xl mx-auto space-y-8 py-4 animate-fade-slide-in">
+    <div className="max-w-6xl mx-auto space-y-6 py-4 animate-fade-slide-in">
       <div className="text-center space-y-3">
         <h2 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-600 via-teal-600 to-orange-600 bg-clip-text text-transparent leading-tight">
           Customer View
@@ -100,22 +116,29 @@ export default function UserView() {
             <Label htmlFor="singleListSelect" className="text-sm font-semibold">
               Select Comment List
             </Label>
-            <select
-              id="singleListSelect"
-              value={selectedListId || ''}
-              onChange={(e) => {
-                setSelectedListId(e.target.value || null);
-                setGeneratedComment(null);
-              }}
-              className="w-full h-12 text-base rounded-2xl border-2 px-4 bg-background"
-            >
-              <option value="">Choose a list...</option>
-              {listIds.map((listId) => (
-                <option key={listId} value={listId}>
-                  {listId}
-                </option>
-              ))}
-            </select>
+            {isLoading ? (
+              <div className="w-full h-12 rounded-2xl border-2 px-4 bg-background flex items-center">
+                <div className="w-5 h-5 border-3 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mr-2" />
+                <span className="text-muted-foreground">Loading lists...</span>
+              </div>
+            ) : (
+              <select
+                id="singleListSelect"
+                value={selectedListId || ''}
+                onChange={(e) => {
+                  setSelectedListId(e.target.value || null);
+                  setGeneratedComment(null);
+                }}
+                className="w-full h-12 text-base rounded-2xl border-2 px-4 bg-background"
+              >
+                <option value="">Choose a list...</option>
+                {listIds.map((listId) => (
+                  <option key={listId} value={listId}>
+                    {listId}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
           {selectedListId && (

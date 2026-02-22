@@ -1,167 +1,134 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense, useCallback } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import AdminPanel from './pages/AdminPanel';
-import UserView from './pages/UserView';
-import UploadSection from './pages/UploadSection';
-import LiveListChecker from './pages/LiveListChecker';
 import AnimatedBackground from './components/AnimatedBackground';
 import AdminPinDialog from './components/AdminPinDialog';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Toaster } from '@/components/ui/sonner';
 import { ThemeProvider } from 'next-themes';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Upload as UploadIcon, Shield, CheckSquare } from 'lucide-react';
-import { useMidnightCommentListClear } from './hooks/useMidnightCommentListClear';
-import { useMusicPlayer } from './hooks/useMusicPlayer';
+import { MessageSquare, Upload, ListCheck, Shield } from 'lucide-react';
 
-type AppView = 'customer' | 'upload' | 'liveList' | 'admin';
+// Lazy load heavy components for better performance
+const AdminPanel = lazy(() => import('./pages/AdminPanel'));
+const UserView = lazy(() => import('./pages/UserView'));
+const UploadSection = lazy(() => import('./pages/UploadSection'));
+const LiveListChecker = lazy(() => import('./pages/LiveListChecker'));
 
-function AppContent() {
-  const [currentView, setCurrentView] = useState<AppView>('customer');
-  const [showPinDialog, setShowPinDialog] = useState(false);
-  const [isAdminUnlocked, setIsAdminUnlocked] = useState(() => {
-    try {
-      return sessionStorage.getItem('adminUnlocked') === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useMidnightCommentListClear(isAdminUnlocked);
-  
-  // Initialize music player at app level
-  const { attemptAutoPlay } = useMusicPlayer();
-
-  useEffect(() => {
-    // Attempt autoplay when app mounts
-    attemptAutoPlay();
-  }, [attemptAutoPlay]);
-
-  const handleViewChange = (view: AppView) => {
-    if (view === 'admin' && !isAdminUnlocked) {
-      setShowPinDialog(true);
-    } else {
-      setCurrentView(view);
-    }
-  };
-
-  const handlePinSuccess = () => {
-    try {
-      sessionStorage.setItem('adminUnlocked', 'true');
-    } catch {
-      // Ignore storage errors
-    }
-    setIsAdminUnlocked(true);
-    setShowPinDialog(false);
-    setCurrentView('admin');
-  };
-
-  const handlePinCancel = () => {
-    setShowPinDialog(false);
-    if (currentView === 'admin' && !isAdminUnlocked) {
-      setCurrentView('customer');
-    }
-  };
-
-  const handleLogout = () => {
-    try {
-      sessionStorage.removeItem('adminUnlocked');
-    } catch {
-      // Ignore storage errors
-    }
-    setIsAdminUnlocked(false);
-    setCurrentView('customer');
-  };
-
+// Loading fallback component
+function LoadingFallback() {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-blue-50 via-teal-50 to-orange-50 dark:from-blue-950 dark:via-teal-950 dark:to-orange-950 relative overflow-hidden">
-      <AnimatedBackground />
-      <Header onLogout={handleLogout} isAdminUnlocked={isAdminUnlocked} />
-      
-      <main className="flex-1 container mx-auto px-4 py-8 relative z-10">
-        <Tabs value={currentView} onValueChange={(v) => handleViewChange(v as AppView)} className="w-full">
-          <TabsList className="grid w-full max-w-3xl mx-auto grid-cols-4 h-16 rounded-3xl p-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm mb-8 shadow-lg border-2 border-blue-200/50 dark:border-blue-800/50">
-            <TabsTrigger 
-              value="customer" 
-              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
-            >
-              <MessageSquare className="w-5 h-5 mr-2" />
-              Customer View
-            </TabsTrigger>
-            <TabsTrigger 
-              value="upload" 
-              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
-            >
-              <UploadIcon className="w-5 h-5 mr-2" />
-              Upload Section
-            </TabsTrigger>
-            <TabsTrigger 
-              value="liveList" 
-              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
-            >
-              <CheckSquare className="w-5 h-5 mr-2" />
-              Live List Checker
-            </TabsTrigger>
-            <TabsTrigger 
-              value="admin" 
-              className="text-base font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300 h-full"
-            >
-              <Shield className="w-5 h-5 mr-2" />
-              Admin Panel
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="customer" className="mt-0">
-            <UserView />
-          </TabsContent>
-
-          <TabsContent value="upload" className="mt-0">
-            <UploadSection />
-          </TabsContent>
-
-          <TabsContent value="liveList" className="mt-0">
-            <LiveListChecker />
-          </TabsContent>
-
-          <TabsContent value="admin" className="mt-0">
-            {isAdminUnlocked ? (
-              <AdminPanel />
-            ) : (
-              <div className="flex items-center justify-center py-20">
-                <div className="text-center space-y-6">
-                  <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-2xl mx-auto animate-pulse">
-                    <Shield className="w-12 h-12 text-white" />
-                  </div>
-                  <h2 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-teal-600 bg-clip-text text-transparent">Admin Access Required</h2>
-                  <p className="text-muted-foreground text-lg max-w-md mx-auto">
-                    Please unlock the admin panel to continue
-                  </p>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
-      </main>
-
-      <Footer />
-
-      <AdminPinDialog
-        open={showPinDialog}
-        onOpenChange={setShowPinDialog}
-        onSuccess={handlePinSuccess}
-        onCancel={handlePinCancel}
-      />
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
     </div>
   );
 }
 
 export default function App() {
+  const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState('user');
+
+  useEffect(() => {
+    const unlocked = sessionStorage.getItem('adminUnlocked') === 'true';
+    setIsAdminUnlocked(unlocked);
+  }, []);
+
+  const handleAdminUnlock = useCallback(() => {
+    setIsAdminUnlocked(true);
+    sessionStorage.setItem('adminUnlocked', 'true');
+    setShowAdminDialog(false);
+    setActiveTab('admin');
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    setIsAdminUnlocked(false);
+    sessionStorage.removeItem('adminUnlocked');
+    setActiveTab('user');
+  }, []);
+
+  const handleAdminDialogCancel = useCallback(() => {
+    setShowAdminDialog(false);
+  }, []);
+
+  const handleAdminTabClick = useCallback(() => {
+    if (!isAdminUnlocked) {
+      setShowAdminDialog(true);
+    }
+  }, [isAdminUnlocked]);
+
   return (
     <ErrorBoundary>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-        <AppContent />
-        <Toaster />
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-blue-50 via-teal-50 to-orange-50 dark:from-gray-950 dark:via-blue-950 dark:to-teal-950 transition-colors duration-300">
+          <AnimatedBackground />
+          
+          <Header onLogout={handleLogout} isAdminUnlocked={isAdminUnlocked} />
+
+          <main className="flex-1 container mx-auto px-4 py-8">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-4 h-14 rounded-3xl p-1.5 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm shadow-lg border-2 border-blue-200/50 dark:border-blue-800/50 mb-8 transition-all duration-300">
+                <TabsTrigger
+                  value="user"
+                  className="text-sm font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300"
+                >
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  User View
+                </TabsTrigger>
+                <TabsTrigger
+                  value="upload"
+                  className="text-sm font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Upload
+                </TabsTrigger>
+                <TabsTrigger
+                  value="checker"
+                  className="text-sm font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300"
+                >
+                  <ListCheck className="w-4 h-4 mr-2" />
+                  Live Checker
+                </TabsTrigger>
+                <TabsTrigger
+                  value="admin"
+                  onClick={handleAdminTabClick}
+                  className="text-sm font-bold rounded-2xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-teal-500 data-[state=active]:text-white transition-all duration-300"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Admin
+                </TabsTrigger>
+              </TabsList>
+
+              <Suspense fallback={<LoadingFallback />}>
+                <TabsContent value="user" className="mt-0 animate-fade-in">
+                  <UserView />
+                </TabsContent>
+
+                <TabsContent value="upload" className="mt-0 animate-fade-in">
+                  <UploadSection />
+                </TabsContent>
+
+                <TabsContent value="checker" className="mt-0 animate-fade-in">
+                  <LiveListChecker />
+                </TabsContent>
+
+                <TabsContent value="admin" className="mt-0 animate-fade-in">
+                  {isAdminUnlocked ? <AdminPanel /> : <LoadingFallback />}
+                </TabsContent>
+              </Suspense>
+            </Tabs>
+          </main>
+
+          <Footer />
+          <Toaster />
+          
+          <AdminPinDialog
+            open={showAdminDialog}
+            onOpenChange={setShowAdminDialog}
+            onSuccess={handleAdminUnlock}
+            onCancel={handleAdminDialogCancel}
+          />
+        </div>
       </ThemeProvider>
     </ErrorBoundary>
   );

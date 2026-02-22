@@ -24,6 +24,7 @@ export interface Comment {
     used: boolean;
     timestamp: Time;
 }
+export type AiCommentId = string;
 export interface RatingImageMetadata {
     id: RatingImageId;
     userName: string;
@@ -40,6 +41,13 @@ export interface PaymentRecord {
     amount: bigint;
 }
 export type CommentListId = string;
+export interface AIComment {
+    id: AiCommentId;
+    content: string;
+    ratingSymbol: string;
+    appLinkOrName: string;
+    timestamp: Time;
+}
 export type MessageId = string;
 export interface AppEvent {
     id: AppEventId;
@@ -52,6 +60,7 @@ export interface Message {
     content: string;
     side: MessageSide;
     isRead: boolean;
+    sender?: Principal;
     timestamp: Time;
 }
 export type RatingImageId = string;
@@ -82,16 +91,21 @@ export interface backendInterface {
     addUsernamesToAppEvent(accessCode: string, appEventId: AppEventId, usernames: Array<string>): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     checkUsernamesInAppEvent(appEventId: AppEventId, usernamesToCheck: Array<string>): Promise<Array<[string, boolean]>>;
+    clearAllAiComments(accessCode: string): Promise<void>;
     clearAllCommentLists(accessCode: string): Promise<void>;
     clearEverything(accessCode: string): Promise<void>;
+    createAiComment(accessCode: string, content: string, appLinkOrName: string, ratingSymbol: string): Promise<AiCommentId>;
     createAppEvent(accessCode: string, name: string): Promise<AppEventId>;
     createCommentList(accessCode: string, listId: CommentListId): Promise<void>;
+    deleteAiComment(accessCode: string, aiCommentId: AiCommentId): Promise<void>;
     deleteAppEvent(accessCode: string, appEventId: AppEventId): Promise<void>;
     deleteCommentList(accessCode: string, listId: CommentListId): Promise<void>;
     deleteMessage(accessCode: string, messageId: MessageId): Promise<void>;
     downloadAllRatingImages(accessCode: string): Promise<Array<RatingImageMetadata>>;
     generateBulkComments(bulkGeneratorKey: string, listId: CommentListId, count: bigint): Promise<Array<Comment>>;
     generateSingleComment(listId: CommentListId, deviceId: DeviceId): Promise<string | null>;
+    getAiComment(accessCode: string, aiCommentId: AiCommentId): Promise<AIComment | null>;
+    getAllAiComments(accessCode: string): Promise<Array<AIComment>>;
     getAllAppEvents(accessCode: string): Promise<Array<AppEvent>>;
     getAllBulkCommentTotals(accessCode: string): Promise<Array<[CommentListId, bigint]>>;
     getAllMessages(accessCode: string): Promise<Array<Message>>;

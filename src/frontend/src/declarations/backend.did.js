@@ -28,6 +28,7 @@ export const UserRole = IDL.Variant({
   'user' : IDL.Null,
   'guest' : IDL.Null,
 });
+export const AiCommentId = IDL.Text;
 export const MessageId = IDL.Text;
 export const RatingImageId = IDL.Text;
 export const Time = IDL.Int;
@@ -46,6 +47,13 @@ export const Comment = IDL.Record({
   'timestamp' : Time,
 });
 export const DeviceId = IDL.Text;
+export const AIComment = IDL.Record({
+  'id' : AiCommentId,
+  'content' : IDL.Text,
+  'ratingSymbol' : IDL.Text,
+  'appLinkOrName' : IDL.Text,
+  'timestamp' : Time,
+});
 export const AppEvent = IDL.Record({
   'id' : AppEventId,
   'name' : IDL.Text,
@@ -61,6 +69,7 @@ export const Message = IDL.Record({
   'content' : IDL.Text,
   'side' : MessageSide,
   'isRead' : IDL.Bool,
+  'sender' : IDL.Opt(Principal),
   'timestamp' : Time,
 });
 export const PaymentStatus = IDL.Variant({
@@ -128,10 +137,17 @@ export const idlService = IDL.Service({
       [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))],
       ['query'],
     ),
+  'clearAllAiComments' : IDL.Func([IDL.Text], [], []),
   'clearAllCommentLists' : IDL.Func([IDL.Text], [], []),
   'clearEverything' : IDL.Func([IDL.Text], [], []),
+  'createAiComment' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [AiCommentId],
+      [],
+    ),
   'createAppEvent' : IDL.Func([IDL.Text, IDL.Text], [AppEventId], []),
   'createCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+  'deleteAiComment' : IDL.Func([IDL.Text, AiCommentId], [], []),
   'deleteAppEvent' : IDL.Func([IDL.Text, AppEventId], [], []),
   'deleteCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
   'deleteMessage' : IDL.Func([IDL.Text, MessageId], [], []),
@@ -150,6 +166,12 @@ export const idlService = IDL.Service({
       [IDL.Opt(IDL.Text)],
       [],
     ),
+  'getAiComment' : IDL.Func(
+      [IDL.Text, AiCommentId],
+      [IDL.Opt(AIComment)],
+      ['query'],
+    ),
+  'getAllAiComments' : IDL.Func([IDL.Text], [IDL.Vec(AIComment)], ['query']),
   'getAllAppEvents' : IDL.Func([IDL.Text], [IDL.Vec(AppEvent)], ['query']),
   'getAllBulkCommentTotals' : IDL.Func(
       [IDL.Text],
@@ -277,6 +299,7 @@ export const idlFactory = ({ IDL }) => {
     'user' : IDL.Null,
     'guest' : IDL.Null,
   });
+  const AiCommentId = IDL.Text;
   const MessageId = IDL.Text;
   const RatingImageId = IDL.Text;
   const Time = IDL.Int;
@@ -295,6 +318,13 @@ export const idlFactory = ({ IDL }) => {
     'timestamp' : Time,
   });
   const DeviceId = IDL.Text;
+  const AIComment = IDL.Record({
+    'id' : AiCommentId,
+    'content' : IDL.Text,
+    'ratingSymbol' : IDL.Text,
+    'appLinkOrName' : IDL.Text,
+    'timestamp' : Time,
+  });
   const AppEvent = IDL.Record({
     'id' : AppEventId,
     'name' : IDL.Text,
@@ -307,6 +337,7 @@ export const idlFactory = ({ IDL }) => {
     'content' : IDL.Text,
     'side' : MessageSide,
     'isRead' : IDL.Bool,
+    'sender' : IDL.Opt(Principal),
     'timestamp' : Time,
   });
   const PaymentStatus = IDL.Variant({
@@ -378,10 +409,17 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Vec(IDL.Tuple(IDL.Text, IDL.Bool))],
         ['query'],
       ),
+    'clearAllAiComments' : IDL.Func([IDL.Text], [], []),
     'clearAllCommentLists' : IDL.Func([IDL.Text], [], []),
     'clearEverything' : IDL.Func([IDL.Text], [], []),
+    'createAiComment' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [AiCommentId],
+        [],
+      ),
     'createAppEvent' : IDL.Func([IDL.Text, IDL.Text], [AppEventId], []),
     'createCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
+    'deleteAiComment' : IDL.Func([IDL.Text, AiCommentId], [], []),
     'deleteAppEvent' : IDL.Func([IDL.Text, AppEventId], [], []),
     'deleteCommentList' : IDL.Func([IDL.Text, CommentListId], [], []),
     'deleteMessage' : IDL.Func([IDL.Text, MessageId], [], []),
@@ -400,6 +438,12 @@ export const idlFactory = ({ IDL }) => {
         [IDL.Opt(IDL.Text)],
         [],
       ),
+    'getAiComment' : IDL.Func(
+        [IDL.Text, AiCommentId],
+        [IDL.Opt(AIComment)],
+        ['query'],
+      ),
+    'getAllAiComments' : IDL.Func([IDL.Text], [IDL.Vec(AIComment)], ['query']),
     'getAllAppEvents' : IDL.Func([IDL.Text], [IDL.Vec(AppEvent)], ['query']),
     'getAllBulkCommentTotals' : IDL.Func(
         [IDL.Text],

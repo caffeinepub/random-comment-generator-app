@@ -1,85 +1,70 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "App Review & Comment Management website with enhanced admin controls, music system, and interactive shooter game",
+  "summary": "AI Comment Generator web application with dark-themed dashboard, comment length selection, smart generation system, 3D rotating cube, and polished UI with smooth animations",
   "architectural_notes": [
-    "Local storage used for client-side caching with backend synchronization",
-    "Music files stored and served from backend for all users",
-    "Export functionality generates both CSV and JSON formats in single click",
-    "Browser autoplay policies handled for background music"
+    "React + TypeScript frontend with Vite bundler",
+    "Motoko backend on Internet Computer platform",
+    "Frontend-based comment generation using templates and randomization",
+    "CSS 3D transforms for rotating cube (no WebGL/Three.js)",
+    "Dark theme with purple/pink gradient color scheme"
   ],
   "known_issues": [],
-  "isFixRequest": false,
+  "isFixRequest": true,
   "existing_features": [
     {
-      "id": "feature-add-delete-buttons-for-individual-comments-in-the-admin-panel-comment-list-management-section-each-comment-row-should-have-a-delete-icon-button-that-removes-that-specific-comment-from-the-backend-and-updates-the-ui",
-      "title": "Add delete buttons for individual comments in the Admin Panel comment list management section. Each comment row should have a delete icon/button that removes that specific comment from the backend and updates the UI.",
+      "id": "feature-add-comment-length-selection-dropdown-to-aicommentgenerator-component-with-three-options-short-50-100-words-medium-100-200-words-and-long-200-300-words-pass-the-selected-length-to-the-generation-logic",
+      "title": "Add comment length selection dropdown to AiCommentGenerator component with three options: Short (50-100 words), Medium (100-200 words), and Long (200-300 words). Pass the selected length to the generation logic.",
       "reqIds": [
         "REQ-1"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-delete-buttons-for-individual-usernames-in-the-admin-live-list-panel-each-username-entry-should-have-a-delete-icon-button-that-removes-it-from-the-specific-app-event-list",
-      "title": "Add delete buttons for individual usernames in the Admin Live List Panel. Each username entry should have a delete icon/button that removes it from the specific app/event list.",
+      "id": "feature-enhance-the-comment-generation-algorithm-in-aicommentgenerator-to-guarantee-completely-fresh-unique-comments-on-every-generation-use-randomized-sentence-structures-varied-vocabulary-pools-dynamic-adjectives-and-timestamp-based-seeding-to-prevent-any-duplicate-outputs-integrate-the-rating-symbol-naturally-into-the-generated-text",
+      "title": "Enhance the comment generation algorithm in AiCommentGenerator to guarantee completely fresh, unique comments on every generation. Use randomized sentence structures, varied vocabulary pools, dynamic adjectives, and timestamp-based seeding to prevent any duplicate outputs. Integrate the rating symbol naturally into the generated text.",
       "reqIds": [
         "REQ-2"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-a-clear-all-button-to-the-admin-panel-that-removes-all-comments-app-events-and-usernames-from-the-system-this-should-be-a-prominent-action-button-with-strong-confirmation",
-      "title": "Add a Clear All button to the Admin Panel that removes all comments, app events, and usernames from the system. This should be a prominent action button with strong confirmation.",
+      "id": "feature-fix-the-list-visibility-glitch-in-aicommenttable-so-that-generated-comments-appear-instantly-and-correctly-below-the-generation-card-as-soon-as-the-user-clicks-generate-ensure-proper-state-management-and-dom-updates",
+      "title": "Fix the list visibility glitch in AiCommentTable so that generated comments appear instantly and correctly below the generation card as soon as the user clicks 'Generate'. Ensure proper state management and DOM updates.",
       "reqIds": [
         "REQ-3"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-one-click-download-feature-in-admin-panel-that-exports-all-data-comments-app-events-usernames-in-both-csv-and-json-formats-the-download-should-bundle-all-data-types-into-separate-files-within-a-single-download-action",
-      "title": "Implement one-click download feature in Admin Panel that exports all data (comments, app events, usernames) in both CSV and JSON formats. The download should bundle all data types into separate files within a single download action.",
+      "id": "feature-implement-a-skeleton-loader-in-aicommenttable-that-displays-while-comments-are-being-generated-add-a-smooth-typing-effect-animation-that-reveals-each-comment-character-by-character-after-it-s-fetched-to-create-a-real-time-streaming-appearance",
+      "title": "Implement a skeleton loader in AiCommentTable that displays while comments are being generated. Add a smooth typing effect animation that reveals each comment character-by-character after it's fetched to create a real-time streaming appearance.",
       "reqIds": [
         "REQ-4"
       ],
       "version": 1
     },
     {
-      "id": "feature-implement-local-storage-caching-for-comment-lists-app-events-and-usernames-cache-data-locally-on-initial-load-and-subsequent-fetches-serving-from-cache-for-instant-display-while-syncing-with-backend-in-the-background",
-      "title": "Implement local storage caching for comment lists, app events, and usernames. Cache data locally on initial load and subsequent fetches, serving from cache for instant display while syncing with backend in the background.",
+      "id": "feature-create-a-lightweight-3d-rotating-cube-using-pure-css-3d-transforms-and-integrate-it-into-the-adminpanel-ai-comments-tab-position-it-strategically-to-complement-the-dark-theme-and-purple-pink-gradients-without-cluttering-the-form-area-the-cube-should-rotate-continuously-and-smoothly",
+      "title": "Create a lightweight 3D rotating cube using pure CSS 3D transforms and integrate it into the AdminPanel AI Comments tab. Position it strategically to complement the dark theme and purple/pink gradients without cluttering the form area. The cube should rotate continuously and smoothly.",
       "reqIds": [
         "REQ-5"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-background-music-system-that-auto-plays-when-the-website-opens-respecting-browser-autoplay-policies-with-muted-start-if-needed-include-visible-play-pause-and-volume-control-buttons-accessible-to-all-users",
-      "title": "Add background music system that auto-plays when the website opens (respecting browser autoplay policies with muted start if needed). Include visible play/pause and volume control buttons accessible to all users.",
+      "id": "feature-optimize-the-loading-speed-of-aicommentgenerator-component-by-ensuring-all-async-operations-comment-generation-api-calls-don-t-block-the-main-thread-use-proper-react-query-hooks-with-optimistic-updates-and-ensure-mutations-complete-efficiently",
+      "title": "Optimize the loading speed of AiCommentGenerator component by ensuring all async operations (comment generation, API calls) don't block the main thread. Use proper React Query hooks with optimistic updates and ensure mutations complete efficiently.",
       "reqIds": [
         "REQ-6"
       ],
       "version": 1
     },
     {
-      "id": "feature-add-music-upload-and-management-functionality-to-the-admin-panel-admins-can-upload-audio-files-mp3-wav-which-are-stored-in-the-backend-and-served-to-all-users-as-the-background-music-include-options-to-preview-replace-and-remove-the-current-music-file",
-      "title": "Add music upload and management functionality to the Admin Panel. Admins can upload audio files (MP3, WAV) which are stored in the backend and served to all users as the background music. Include options to preview, replace, and remove the current music file.",
+      "id": "feature-polish-the-ui-of-aicommentgenerator-and-aicommenttable-with-smooth-hover-states-proper-spacing-clean-transitions-and-modern-styling-keep-the-existing-dark-theme-with-purple-pink-gradients-but-enhance-button-interactions-input-focus-states-and-card-shadows-for-a-snappier-more-modern-feel",
+      "title": "Polish the UI of AiCommentGenerator and AiCommentTable with smooth hover states, proper spacing, clean transitions, and modern styling. Keep the existing dark theme with purple/pink gradients but enhance button interactions, input focus states, and card shadows for a snappier, more modern feel.",
       "reqIds": [
         "REQ-7"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-replace-the-existing-interactive3dcube-component-with-a-lightweight-top-down-shooter-mini-game-using-html5-canvas-or-react-three-fiber-the-game-should-feature-player-controlled-character-movement-wasd-or-arrow-keys-shooting-mechanics-mouse-click-or-spacebar-and-enemy-waves-that-spawn-and-move-toward-the-player-keep-gameplay-simple-engaging-and-performant",
-      "title": "Replace the existing Interactive3DCube component with a lightweight top-down shooter mini-game using HTML5 Canvas or React Three Fiber. The game should feature player-controlled character movement (WASD or arrow keys), shooting mechanics (mouse click or spacebar), and enemy waves that spawn and move toward the player. Keep gameplay simple, engaging, and performant.",
-      "reqIds": [
-        "REQ-8"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-maintain-secure-data-handling-for-all-new-features-including-music-uploads-game-state-and-admin-operations-ensure-admin-access-code-protection-5676-remains-enforced-for-sensitive-operations",
-      "title": "Maintain secure data handling for all new features including music uploads, game state, and admin operations. Ensure admin access code protection (5676) remains enforced for sensitive operations.",
-      "reqIds": [
-        "REQ-9"
       ],
       "version": 1
     }
@@ -87,48 +72,49 @@
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add delete buttons for individual comments and usernames in admin panel",
+      "summary": "Comment length selection (Short/Medium/Long)",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Add Clear All button in admin panel to remove all data",
+      "summary": "Smart comment generation with guaranteed uniqueness",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Implement one-click download feature exporting all data in CSV and JSON formats",
+      "summary": "3D rotating cube using CSS animations",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Implement local storage caching for faster list loading with backend sync",
+      "summary": "Smooth typing effect animation for generated comments",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-5",
-      "summary": "Add background music system with auto-play, play/pause and volume controls",
+      "summary": "Skeleton loader during comment generation",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-6",
-      "summary": "Enable admin panel music upload and management stored live for all users",
+      "summary": "Fix list visibility - comments appear instantly after generation",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-7",
-      "summary": "Replace 3D cube with lightweight top-down shooter mini-game",
+      "summary": "Dark theme with purple/pink gradients and polished UI",
       "reqIds": [],
       "status": "pending"
     }
   ],
-  "projectName": "App Review Manager",
+  "gameProjectType": "none",
+  "projectName": "AI Comment Generator",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

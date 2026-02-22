@@ -60,7 +60,7 @@ export default function UploadSection() {
     const count = parseInt(bulkCount);
 
     generateBulkComments(
-      { listId: selectedList, count, bulkGeneratorKey: accessKey },
+      { listId: selectedList, count: BigInt(count), bulkGeneratorKey: accessKey },
       {
         onSuccess: (comments) => {
           if (comments && comments.length > 0) {
