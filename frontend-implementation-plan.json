@@ -1,0 +1,157 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Green-Blue Theme Overhaul, Upload Section Redesign, Access Key System & Admin CRUD",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "summary": "Apply vibrant green-blue gradient aesthetic throughout the entire app including Navbar/Header, UserView, UploadSection, LiveListChecker, and AdminPanel",
+      "acceptanceCriteria": [
+        "index.css / Tailwind config defines dark teal/navy-green base and cyan/emerald accent tokens",
+        "All primary buttons render with a teal-to-emerald gradient",
+        "Active navigation tabs show blue-green gradient highlight",
+        "Header, UserView, UploadSection, LiveListChecker, and AdminPanel all use the new palette with no leftover purple/generic colors"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/index.css",
+          "operation": "modify",
+          "description": "Replace existing color tokens with green-blue gradient palette: dark teal/navy-green (#0a2e2a, #1a3e3a) for base backgrounds, deep teal → cyan → emerald (#006666, #00a3a3, #00cc99) for gradient accents, and dark green-blue tones for text and borders. Update CSS custom properties for --background, --foreground, --primary, --accent, and add gradient utility classes for buttons and active states."
+        },
+        {
+          "path": "frontend/tailwind.config.js",
+          "operation": "modify",
+          "description": "Extend theme with green-blue color mappings: teal/navy-green base tokens, cyan/emerald gradient stops, and dark emerald/teal for text. Add custom gradient utilities (bg-gradient-teal-emerald) and ensure all color references use the new CSS variables."
+        },
+        {
+          "path": "frontend/src/components/Header.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal/navy-green background, cyan/emerald gradient for active tab highlights with glow effects, and teal-emerald gradient for primary buttons. Remove any purple or generic color classes and replace with the new palette tokens."
+        },
+        {
+          "path": "frontend/src/pages/UserView.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal/navy-green card backgrounds, cyan/emerald gradient buttons, and deep teal section headings. Ensure all interactive elements use the gradient accent colors with glow effects on hover/active states."
+        },
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal/navy-green base background and card backgrounds, cyan/emerald gradient for primary buttons (copy, generate), and deep teal section headings. Remove any existing color classes and replace with the new theme tokens."
+        },
+        {
+          "path": "frontend/src/pages/LiveListChecker.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal/navy-green background and card styling, cyan/emerald gradient buttons, and teal text for labels. Ensure status indicators and interactive elements use the new palette consistently."
+        },
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal/navy-green background for the panel container, cyan/emerald gradient for active tab highlights with glow, and deep teal for tab labels and section headings. Remove any purple/generic accent colors."
+        },
+        {
+          "path": "frontend/src/components/AdminCommentsPanel.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling to all buttons, cards, and interactive elements: cyan/emerald gradient for primary actions, dark teal backgrounds, and deep emerald/teal text."
+        },
+        {
+          "path": "frontend/src/components/AdminImagesPanel.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal card backgrounds, cyan/emerald gradient buttons, and teal borders for image grid items."
+        },
+        {
+          "path": "frontend/src/components/AdminSettingsPanel.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal cards, cyan/emerald gradient buttons, and deep teal headings."
+        },
+        {
+          "path": "frontend/src/pages/AdminLiveListPanel.tsx",
+          "operation": "modify",
+          "description": "Apply green-blue theme styling: dark teal backgrounds, cyan/emerald gradient buttons, and teal text for list items and headings."
+        }
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "summary": "Redesign UploadSection to contain three cards (Upload Comment, Bulk Comment Generator with access key requirement, Upload Rating Image) plus AnimatedBackground with green-blue geometric particles",
+      "acceptanceCriteria": [
+        "UploadSection renders exactly three visually distinct cards in the described order",
+        "The Bulk Comment Generator card shows an access key entry field before allowing generation",
+        "The Upload Rating Image card has a text input for the image name and a file picker",
+        "A canvas or CSS animated background with green-blue geometric particles is visible behind the cards"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "Restructure the page to render three distinct cards in order: (1) Upload Comment card with a textarea for manual comment entry and a submit button; (2) Bulk Comment Generator card that includes the access key validation UI (input field, verify button) and the existing AI comment generation controls (count, length sliders, generate button) – keep the access key requirement integrated into this card; (3) Upload Rating Image card with a text input labeled 'Image Name' and a file input for image selection, plus an upload button. Position all three cards in a vertical or grid layout with consistent spacing and green-blue styling. Import and render AnimatedBackground as a sibling to the card container so it renders behind the cards. Ensure the AnimatedBackground uses green-blue particle colors (cyan, emerald, teal)."
+        },
+        {
+          "path": "frontend/src/components/AnimatedBackground.tsx",
+          "operation": "modify",
+          "description": "Update particle and shape colors to use green-blue tones: deep teal (#006666), cyan (#00a3a3), and emerald (#00cc99). Ensure the hue cycling and gradient fills reflect the new palette. Keep the existing canvas-based animation logic and performance optimizations intact."
+        },
+        {
+          "path": "frontend/src/hooks/useUploadImage.ts",
+          "operation": "create",
+          "description": "Create a custom React hook that wraps the backend actor's uploadImage method. Accept a file and image name as parameters, convert the file to ExternalBlob using ExternalBlob.fromBytes, call actor.uploadImage, and return loading/error/success states for the Upload Rating Image card to consume. Use the blob-storage component's ExternalBlob class as documented in the component usage. Verify the component's usage instructions before implementing."
+        }
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "summary": "Require access key entry in Bulk Comment Generator card; validate key via backend before unlocking generation",
+      "acceptanceCriteria": [
+        "Bulk Comment Generator shows an access key input field when locked",
+        "Submitting an invalid key shows a visible error message and keeps generation blocked",
+        "Submitting a valid key unlocks the generator and shows the comment generation controls",
+        "The locked state is enforced on the frontend using the backend validateAccessKey response"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/UploadSection.tsx",
+          "operation": "modify",
+          "description": "In the Bulk Comment Generator card section, add a locked/unlocked state variable. When locked, render an access key input field and a 'Verify Key' button. On button click, call the backend validateAccessKey method via the actor. If the response is false or an error occurs, display a visible error message (e.g., 'Invalid or missing access key') below the input and keep the card locked. If the response is true, set the state to unlocked and reveal the existing AI comment generation controls (count/length sliders, generate button). Store the unlocked state in component state (not localStorage) so it resets on page reload. Ensure the locked UI is styled with the green-blue theme."
+        },
+        {
+          "path": "frontend/src/hooks/useValidateAccessKey.ts",
+          "operation": "create",
+          "description": "Create a custom React hook that wraps the backend actor's validateAccessKey method. Accept a key string as a parameter, call actor.validateAccessKey(key), and return loading/error/success states plus the validation result (boolean). This hook will be used by the Bulk Comment Generator card to enforce access key validation."
+        }
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "summary": "Add 'Access Keys' tab to AdminPanel with full CRUD UI for managing access keys (list, create, edit, delete)",
+      "acceptanceCriteria": [
+        "AdminPanel has a new 'Access Keys' tab alongside the existing tabs",
+        "The tab displays a list of all access keys with label and key string visible",
+        "Admin can create a new access key by filling label + key string and submitting",
+        "Admin can edit an existing key's label or key string inline",
+        "Admin can delete a key; it is removed from the list and immediately invalidated",
+        "All changes persist to backend stable storage and survive page reload"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Add a new tab labeled 'Access Keys' to the existing tab array (alongside Comments, Images, Chat, Live List, Settings). When the Access Keys tab is selected, lazy-render the AdminAccessKeysPanel component. Ensure the new tab uses the green-blue theme styling (cyan/emerald gradient for active state, deep teal text). Add prefetch logic for access keys query on tab hover."
+        },
+        {
+          "path": "frontend/src/components/AdminAccessKeysPanel.tsx",
+          "operation": "create",
+          "description": "Create a new panel component that renders a full CRUD UI for access keys. At the top, display a form with two text inputs ('Description' and 'Key String') and a 'Create' button styled with the green-blue gradient theme. Below the form, render a table or card list displaying all access keys fetched via the useAccessKeysQueries hook (to be created). Each row/card shows the key's description and key string, plus inline 'Edit' and 'Delete' buttons. For edit, allow inline editing of description and key string with a 'Save' button. For delete, show a confirmation dialog before calling the delete mutation. Use React Query for data fetching and mutations, and ensure all UI elements use the green-blue theme (dark teal backgrounds, cyan/emerald buttons). Display loading skeletons while fetching and show a toast notification on successful create/update/delete operations."
+        },
+        {
+          "path": "frontend/src/hooks/useAccessKeysQueries.ts",
+          "operation": "create",
+          "description": "Create a set of React Query hooks for access key management: useGetAccessKeys (query hook that calls actor.getAccessKeys and returns the array of AccessKey objects), useCreateAccessKey (mutation hook that calls actor.createAccessKey with description and key string, then invalidates the access keys query), useUpdateAccessKey (mutation hook that calls actor.updateAccessKey with key, newDescription, and newKey, then invalidates the query), and useDeleteAccessKey (mutation hook that calls actor.deleteAccessKey with key, then invalidates the query). Ensure all hooks depend on the actor being available and include proper error handling."
+        },
+        {
+          "path": "frontend/src/pages/AdminPanel.tsx",
+          "operation": "modify",
+          "description": "Wire the new AdminAccessKeysPanel into the tab rendering logic. Import the component and render it when the 'Access Keys' tab is active. Ensure the tab registration and lazy loading follow the same pattern as the existing tabs."
+        }
+      ]
+    }
+  ]
+}

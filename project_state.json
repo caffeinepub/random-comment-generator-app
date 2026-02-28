@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 3,
+  "summary": "A multi-section web app with a full green-blue gradient theme overhaul (deep teal/navy-green base with cyan/emerald accents), a redesigned Upload section, a global Access Key system for the Bulk Comment Generator, and an Admin panel with Access Key CRUD management.",
+  "architectural_notes": [
+    "Access keys are global (not user-specific); any user who receives a key from admin can use it to unlock Bulk Comment Generator",
+    "Revoked/deleted access keys must stop working instantly across all users"
+  ],
+  "known_issues": [],
+  "isFixRequest": false,
+  "existing_features": [
+    {
+      "id": "feature-overhaul-the-entire-app-with-a-vibrant-green-blue-gradient-aesthetic-dark-teal-navy-green-base-background-deep-teal-cyan-emerald-gradient-accents-on-buttons-active-tabs-and-glow-effects-and-dark-green-blue-deep-emerald-teal-tones-for-tab-labels-and-section-headings-apply-consistently-across-navbar-header-userview-uploadsection-livelistchecker-and-adminpanel",
+      "title": "Overhaul the entire app with a vibrant green-blue gradient aesthetic: dark teal/navy-green base background, deep teal → cyan → emerald gradient accents on buttons, active tabs, and glow effects, and dark green-blue (deep emerald/teal) tones for tab labels and section headings. Apply consistently across Navbar/Header, UserView, UploadSection, LiveListChecker, and AdminPanel.",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-redesign-the-uploadsection-page-to-contain-three-cards-1-upload-comment-card-with-a-textarea-2-bulk-comment-generator-card-that-requires-a-valid-access-key-to-generate-comments-and-3-upload-rating-image-card-with-a-name-input-and-file-input-add-an-animatedbackground-with-floating-geometric-particles-rendered-in-green-blue-tones-behind-the-section",
+      "title": "Redesign the UploadSection page to contain three cards: (1) Upload Comment card with a textarea, (2) Bulk Comment Generator card that requires a valid access key to generate comments, and (3) Upload Rating Image card with a name input and file input. Add an AnimatedBackground with floating geometric particles rendered in green-blue tones behind the section.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-in-the-bulk-comment-generator-card-uploadsection-require-the-user-to-enter-an-access-key-before-generation-is-allowed-on-submission-call-the-backend-validateaccesskey-function-if-the-key-is-invalid-or-missing-display-a-clear-blocked-error-message-and-prevent-generation-if-valid-unlock-the-generator-for-the-session",
+      "title": "In the Bulk Comment Generator card (UploadSection), require the user to enter an access key before generation is allowed. On submission, call the backend validateAccessKey function. If the key is invalid or missing, display a clear blocked/error message and prevent generation. If valid, unlock the generator for the session.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-an-access-keys-tab-to-the-adminpanel-with-full-crud-ui-a-list-of-all-access-keys-showing-label-and-key-string-a-form-to-create-a-new-key-label-key-string-fields-inline-edit-capability-for-existing-keys-and-a-delete-button-per-key-all-operations-must-call-the-corresponding-backend-functions-and-refresh-the-list-immediately",
+      "title": "Add an 'Access Keys' tab to the AdminPanel with full CRUD UI: a list of all access keys (showing label and key string), a form to create a new key (label + key string fields), inline edit capability for existing keys, and a delete button per key. All operations must call the corresponding backend functions and refresh the list immediately.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Full green-blue gradient theme overhaul across entire app (dark teal/navy-green base, cyan/emerald accents, consistent across all sections)",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Redesigned Upload section with Comment card, Bulk Comment Generator (access key required), Rating Image upload card, and floating geometric particles in green-blue tones",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Global access key system: users enter a key in Bulk Comment Generator to unlock generation; invalid/missing key blocks usage",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-4",
+      "summary": "Admin panel Access Key Management tab with full CRUD (Create, Edit, Delete); each key has label/name + key string; deleted keys instantly revoked",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Implement a global access key system in the backend. Store a collection of access keys, each with a label and a key string. Expose public query/update functions: validateAccessKey(key: Text) : Bool to check if a key exists and is active, and full CRUD for admin use (createAccessKey, updateAccessKey, deleteAccessKey, listAccessKeys). Deleted/revoked keys must immediately fail validation.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "status": "pending"
+    }
+  ],
+  "gameProjectType": "none",
+  "projectName": "Comment Rating Studio",
+  "clarification_mode": "instant",
+  "clarification_rounds": 0
+}

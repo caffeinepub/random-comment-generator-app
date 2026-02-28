@@ -1,0 +1,124 @@
+{
+  "kind": "build_request",
+  "title": "Green-Blue Theme Overhaul, Upload Section Redesign, Access Key System & Admin CRUD",
+  "projectName": "Comment Rating Studio",
+  "priority": "high",
+  "requirements": [
+    {
+      "id": "REQ-1",
+      "text": "Overhaul the entire app with a vibrant green-blue gradient aesthetic: dark teal/navy-green base background, deep teal → cyan → emerald gradient accents on buttons, active tabs, and glow effects, and dark green-blue (deep emerald/teal) tones for tab labels and section headings. Apply consistently across Navbar/Header, UserView, UploadSection, LiveListChecker, and AdminPanel.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Full Green-Blue Theme (entire app): Deep teal → cyan → emerald gradient aesthetic, Dark teal/navy-green base background, Bright blue-green gradient buttons, active tabs, and glow effects"
+        ]
+      },
+      "acceptanceCriteria": [
+        "index.css / Tailwind config defines dark teal/navy-green base and cyan/emerald accent tokens",
+        "All primary buttons render with a teal-to-emerald gradient",
+        "Active navigation tabs show blue-green gradient highlight",
+        "Header, UserView, UploadSection, LiveListChecker, and AdminPanel all use the new palette with no leftover purple/generic colors"
+      ]
+    },
+    {
+      "id": "REQ-2",
+      "text": "Redesign the UploadSection page to contain three cards: (1) Upload Comment card with a textarea, (2) Bulk Comment Generator card that requires a valid access key to generate comments, and (3) Upload Rating Image card with a name input and file input. Add an AnimatedBackground with floating geometric particles rendered in green-blue tones behind the section.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Upload Comment card with textarea, Bulk Comment Generator card (requires access key to unlock), Upload Rating Image card with name + file input, Floating geometric background particles in green-blue tones"
+        ]
+      },
+      "acceptanceCriteria": [
+        "UploadSection renders exactly three visually distinct cards in the described order",
+        "The Bulk Comment Generator card shows an access key entry field before allowing generation",
+        "The Upload Rating Image card has a text input for the image name and a file picker",
+        "A canvas or CSS animated background with green-blue geometric particles is visible behind the cards"
+      ]
+    },
+    {
+      "id": "REQ-3",
+      "text": "Implement a global access key system in the backend. Store a collection of access keys, each with a label and a key string. Expose public query/update functions: validateAccessKey(key: Text) : Bool to check if a key exists and is active, and full CRUD for admin use (createAccessKey, updateAccessKey, deleteAccessKey, listAccessKeys). Deleted/revoked keys must immediately fail validation.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Global access keys — any user with a valid key can unlock the Bulk Comment Generator",
+          "Revoked/deleted keys instantly stop working",
+          "Each key has a label/name + key string"
+        ]
+      },
+      "acceptanceCriteria": [
+        "backend/main.mo stores access keys as a stable data structure with id, label, and keyString fields",
+        "validateAccessKey returns true for an existing active key and false otherwise",
+        "createAccessKey, updateAccessKey, deleteAccessKey are admin-only calls",
+        "listAccessKeys returns all current access keys",
+        "Calling validateAccessKey after deleteAccessKey returns false immediately"
+      ]
+    },
+    {
+      "id": "REQ-4",
+      "text": "In the Bulk Comment Generator card (UploadSection), require the user to enter an access key before generation is allowed. On submission, call the backend validateAccessKey function. If the key is invalid or missing, display a clear blocked/error message and prevent generation. If valid, unlock the generator for the session.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Users enter the key in the Bulk Generator to unlock generation",
+          "Invalid/missing key = blocked with a clear message"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Bulk Comment Generator shows an access key input field when locked",
+        "Submitting an invalid key shows a visible error message and keeps generation blocked",
+        "Submitting a valid key unlocks the generator and shows the comment generation controls",
+        "The locked state is enforced on the frontend using the backend validateAccessKey response"
+      ]
+    },
+    {
+      "id": "REQ-5",
+      "text": "Add an 'Access Keys' tab to the AdminPanel with full CRUD UI: a list of all access keys (showing label and key string), a form to create a new key (label + key string fields), inline edit capability for existing keys, and a delete button per key. All operations must call the corresponding backend functions and refresh the list immediately.",
+      "target": "both",
+      "source": {
+        "messageIds": [
+          "msg-recent"
+        ],
+        "quotes": [
+          "Admin Panel — Access Key Management: Full CRUD: Create, Edit, Delete access keys, Each key has a label/name + key string, Revoked/deleted keys instantly stop working"
+        ]
+      },
+      "acceptanceCriteria": [
+        "AdminPanel has a new 'Access Keys' tab alongside the existing tabs",
+        "The tab displays a list of all access keys with label and key string visible",
+        "Admin can create a new access key by filling label + key string and submitting",
+        "Admin can edit an existing key's label or key string inline",
+        "Admin can delete a key; it is removed from the list and immediately invalidated",
+        "All changes persist to backend stable storage and survive page reload"
+      ]
+    }
+  ],
+  "constraints": [
+    "Do not modify files under frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, or frontend/src/components/ui",
+    "All Motoko logic must remain in the single actor in backend/main.mo",
+    "Access key validation must be enforced via backend call, not frontend-only localStorage check"
+  ],
+  "nonGoals": [
+    "User-specific (non-global) access keys",
+    "Access key expiry dates or usage limits",
+    "Email or SMS delivery of access keys",
+    "Any changes to the Live Checker or User View functional logic beyond theme styling"
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

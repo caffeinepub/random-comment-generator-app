@@ -1,0 +1,96 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-overhaul-the-entire-app-with-a-vibrant-green-blue-gradient-aesthetic-dark-teal-navy-green-base-background-deep-teal-cyan-emerald-gradient-accents-on-buttons-active-tabs-and-glow-effects-and-dark-green-blue-deep-emerald-teal-tones-for-tab-labels-and-section-headings-apply-consistently-across-navbar-header-userview-uploadsection-livelistchecker-and-adminpanel",
+      "featureTitle": "Overhaul the entire app with a vibrant green-blue gradient aesthetic: dark teal/navy-green base background, deep teal → cyan → emerald gradient accents on buttons, active tabs, and glow effects, and dark green-blue (deep emerald/teal) tones for tab labels and section headings. Apply consistently across Navbar/Header, UserView, UploadSection, LiveListChecker, and AdminPanel.",
+      "files": [
+        "frontend/src/components/AdminCommentsPanel.tsx",
+        "frontend/src/components/AdminImagesPanel.tsx",
+        "frontend/src/components/AdminSettingsPanel.tsx",
+        "frontend/src/components/Header.tsx",
+        "frontend/src/index.css",
+        "frontend/src/pages/AdminLiveListPanel.tsx",
+        "frontend/src/pages/AdminPanel.tsx",
+        "frontend/src/pages/UploadSection.tsx",
+        "frontend/tailwind.config.js"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-1"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-redesign-the-uploadsection-page-to-contain-three-cards-1-upload-comment-card-with-a-textarea-2-bulk-comment-generator-card-that-requires-a-valid-access-key-to-generate-comments-and-3-upload-rating-image-card-with-a-name-input-and-file-input-add-an-animatedbackground-with-floating-geometric-particles-rendered-in-green-blue-tones-behind-the-section",
+      "featureTitle": "Redesign the UploadSection page to contain three cards: (1) Upload Comment card with a textarea, (2) Bulk Comment Generator card that requires a valid access key to generate comments, and (3) Upload Rating Image card with a name input and file input. Add an AnimatedBackground with floating geometric particles rendered in green-blue tones behind the section.",
+      "files": [
+        "frontend/src/components/AnimatedBackground.tsx",
+        "frontend/src/pages/UploadSection.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-2"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-in-the-bulk-comment-generator-card-uploadsection-require-the-user-to-enter-an-access-key-before-generation-is-allowed-on-submission-call-the-backend-validateaccesskey-function-if-the-key-is-invalid-or-missing-display-a-clear-blocked-error-message-and-prevent-generation-if-valid-unlock-the-generator-for-the-session",
+      "featureTitle": "In the Bulk Comment Generator card (UploadSection), require the user to enter an access key before generation is allowed. On submission, call the backend validateAccessKey function. If the key is invalid or missing, display a clear blocked/error message and prevent generation. If valid, unlock the generator for the session.",
+      "files": [
+        "frontend/src/pages/UploadSection.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-4"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-add-an-access-keys-tab-to-the-adminpanel-with-full-crud-ui-a-list-of-all-access-keys-showing-label-and-key-string-a-form-to-create-a-new-key-label-key-string-fields-inline-edit-capability-for-existing-keys-and-a-delete-button-per-key-all-operations-must-call-the-corresponding-backend-functions-and-refresh-the-list-immediately",
+      "featureTitle": "Add an 'Access Keys' tab to the AdminPanel with full CRUD UI: a list of all access keys (showing label and key string), a form to create a new key (label + key string fields), inline edit capability for existing keys, and a delete button per key. All operations must call the corresponding backend functions and refresh the list immediately.",
+      "files": [
+        "frontend/src/components/AdminAccessKeysPanel.tsx",
+        "frontend/src/hooks/useAccessKeysQueries.ts",
+        "frontend/src/pages/AdminPanel.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "blob-storage@4.0.0",
+        "github-export-icp-cli@1.0.0"
+      ],
+      "testIds": [
+        "REQ-5"
+      ],
+      "confidence": "high"
+    }
+  ]
+}

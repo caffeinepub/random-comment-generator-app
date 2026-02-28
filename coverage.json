@@ -1,0 +1,124 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-27T05:44:09.502Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 5,
+    "implemented": 4,
+    "items": [
+      {
+        "id": "REQ-1",
+        "summary": "Overhaul the entire app with a vibrant green-blue gradient aesthetic: dark teal/navy-green base background, deep teal → cyan → emerald gradient accents on buttons, active tabs, and glow effects, and dark green-blue (deep emerald/teal) tones for tab labels and section headings. Apply consistently across Navbar/Header, UserView, UploadSection, LiveListChecker, and AdminPanel.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/Header.tsx",
+          "frontend/src/pages/UserView.tsx",
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/pages/LiveListChecker.tsx",
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/components/AdminCommentsPanel.tsx",
+          "frontend/src/components/AdminImagesPanel.tsx",
+          "frontend/src/components/AdminSettingsPanel.tsx",
+          "frontend/src/pages/AdminLiveListPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/index.css",
+          "frontend/tailwind.config.js",
+          "frontend/src/components/Header.tsx",
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/components/AdminCommentsPanel.tsx",
+          "frontend/src/components/AdminImagesPanel.tsx",
+          "frontend/src/components/AdminSettingsPanel.tsx",
+          "frontend/src/pages/AdminLiveListPanel.tsx"
+        ]
+      },
+      {
+        "id": "REQ-2",
+        "summary": "Redesign the UploadSection page to contain three cards: (1) Upload Comment card with a textarea, (2) Bulk Comment Generator card that requires a valid access key to generate comments, and (3) Upload Rating Image card with a name input and file input. Add an AnimatedBackground with floating geometric particles rendered in green-blue tones behind the section.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/components/AnimatedBackground.tsx",
+          "frontend/src/hooks/useUploadImage.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/components/AnimatedBackground.tsx"
+        ]
+      },
+      {
+        "id": "REQ-3",
+        "summary": "Implement a global access key system in the backend. Store a collection of access keys, each with a label and a key string. Expose public query/update functions: validateAccessKey(key: Text) : Bool to check if a key exists and is active, and full CRUD for admin use (createAccessKey, updateAccessKey, deleteAccessKey, listAccessKeys). Deleted/revoked keys must immediately fail validation.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-4",
+        "summary": "In the Bulk Comment Generator card (UploadSection), require the user to enter an access key before generation is allowed. On submission, call the backend validateAccessKey function. If the key is invalid or missing, display a clear blocked/error message and prevent generation. If valid, unlock the generator for the session.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/UploadSection.tsx",
+          "frontend/src/hooks/useValidateAccessKey.ts"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/UploadSection.tsx"
+        ]
+      },
+      {
+        "id": "REQ-5",
+        "summary": "Add an 'Access Keys' tab to the AdminPanel with full CRUD UI: a list of all access keys (showing label and key string), a form to create a new key (label + key string fields), inline edit capability for existing keys, and a delete button per key. All operations must call the corresponding backend functions and refresh the list immediately.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/components/AdminAccessKeysPanel.tsx",
+          "frontend/src/hooks/useAccessKeysQueries.ts",
+          "frontend/src/pages/AdminPanel.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/pages/AdminPanel.tsx",
+          "frontend/src/components/AdminAccessKeysPanel.tsx",
+          "frontend/src/hooks/useAccessKeysQueries.ts",
+          "frontend/src/pages/AdminPanel.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "backend/migration.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/AdminAccessKeysPanel.tsx",
+    "frontend/src/components/AdminCommentsPanel.tsx",
+    "frontend/src/components/AdminImagesPanel.tsx",
+    "frontend/src/components/AdminSettingsPanel.tsx",
+    "frontend/src/components/AnimatedBackground.tsx",
+    "frontend/src/components/Footer.tsx",
+    "frontend/src/components/Header.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/useAccessKeysQueries.ts",
+    "frontend/src/hooks/useQueries.ts",
+    "frontend/src/index.css",
+    "frontend/src/pages/AdminLiveListPanel.tsx",
+    "frontend/src/pages/AdminPanel.tsx",
+    "frontend/src/pages/UploadSection.tsx",
+    "frontend/tailwind.config.js",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}
